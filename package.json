@@ -31,7 +31,7 @@
         "singleQuote": true,
         "trailingComma": "es5"
     },
-    "name": "audiosalad-xml",
+    "name": "@ssh/audiosalad-xml",
     "author": "Sanil Chawla",
     "module": "dist/audiosalad-xml.esm.js",
     "size-limit": [
