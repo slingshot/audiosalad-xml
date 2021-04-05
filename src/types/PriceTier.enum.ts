@@ -1,0 +1,20 @@
+// eslint-disable-next-line @typescript-eslint/naming-convention
+export enum iTunesPriceTier {
+    Digital45 = 'Digital 45',
+    MiniEP = 'Mini EP',
+    EP = 'EP',
+    MiniAlbumOne = 'Mini Album One',
+    MiniAlbumTwo = 'Mini Album Two',
+    BudgetOne = 'Budget One',
+    BudgetTwo = 'Budget Two',
+    Back = 'Back',
+    Mid = 'Mid',
+    MidFront = 'Mid/Front',
+    FrontOne = 'Front One',
+    FrontTwo = 'Front Two',
+    FrontPlus = 'Front Plus',
+    DeluxeOne = 'Deluxe One',
+    DeluxeTwo = 'Deluxe Two',
+    DeluxeThree = 'Deluxe Three',
+    DeluxeFour = 'Deluxe Four',
+}

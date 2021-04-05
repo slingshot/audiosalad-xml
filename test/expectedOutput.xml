@@ -1,0 +1,150 @@
+<release xmlns="audiosalad_export_v3.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="audiosalad_export_v3.2 http://audiosalad-xsd.s3.amazonaws.com/audiosalad_export_v3.2.xsd">
+    <schema_id>audiosalad_export_v3.2</schema_id>
+    <distributor_name>Slingshot Records</distributor_name>
+    <export_id>abc123</export_id>
+    <export_time>2020-05-02T00:00:00.000Z</export_time>
+    <action>add</action>
+    <upc_ean>123456789012</upc_ean>
+    <vendor_release_id>xyz123</vendor_release_id>
+    <catalog_id>SS-TST-01</catalog_id>
+    <series>Test Collection</series>
+    <title>Everything I Wanted</title>
+    <title_version>Slingshot Remix</title_version>
+    <advisory>explicit</advisory>
+    <metadata_language>English</metadata_language>
+    <audio_language>English</audio_language>
+    <display_artist>Billie Eilish</display_artist>
+    <participant>
+        <role>Main Artist</role>
+        <name>Billie Eilish</name>
+        <primary>true</primary>
+    </participant>
+    <participant>
+        <role>Song Writer</role>
+        <name>Finneas O'Connell</name>
+        <primary>false</primary>
+    </participant>
+    <original_release_date>2020-05-02</original_release_date>
+    <release_date>2020-05-02</release_date>
+    <release_format>single</release_format>
+    <recording_location>US</recording_location>
+    <url>https://billieeilish.com</url>
+    <genre>
+        <primary>Pop</primary>
+    </genre>
+    <genre>
+        <primary>Pop</primary>
+        <sub>Adult Contemporary</sub>
+    </genre>
+    <tag>new</tag>
+    <tag>billie eilish</tag>
+    <tag>alternative</tag>
+    <notes>This is a test of the library</notes>
+    <text>
+        <type>Liner Notes</type>
+        <language>English</language>
+        <content>Recorded at Slingshot Studios in Beverly Hills</content>
+    </text>
+    <c_info>Billie Eilish, under exclusive license to Slingshot Records</c_info>
+    <c_year>2020</c_year>
+    <p_info>Billie Eilish, under exclusive license to Slingshot Records</p_info>
+    <p_year>2020</p_year>
+    <rights_holders>Billie Eilish, Slingshot Media</rights_holders>
+    <label>
+        <vendor_label_id>1</vendor_label_id>
+        <name>Slingshot Records</name>
+        <city>Beverly Hills</city>
+        <state>California</state>
+        <country>UnitedStates</country>
+    </label>
+    <price_tier>
+        <type>iTunes</type>
+        <name>Mid</name>
+    </price_tier>
+    <permission>
+        <type>download</type>
+        <enabled>false</enabled>
+        <start_date>2021-01-01T00:00:00.000Z</start_date>
+        <end_date>2021-12-31T00:00:00.000Z</end_date>
+        <country_code>AQ</country_code>
+    </permission>
+    <global_release_date>2020-05-03T04:00:00.000Z</global_release_date>
+    <territory>
+        <country_code>WW</country_code>
+    </territory>
+    <asset>
+        <type>image</type>
+        <name>Cover art</name>
+        <format>jpg</format>
+        <mime_type>image/jpeg</mime_type>
+        <md5_checksum>03a43f76d3e52c8a4cf24fd1d8d05911</md5_checksum>
+        <file_name>cover-art.jpg</file_name>
+    </asset>
+    <asset>
+        <type>audio</type>
+        <name>Everything I Wanted</name>
+        <format>flac</format>
+        <mime_type>audio/flac</mime_type>
+        <md5_checksum>4cf2392db7ccd6c9b663f8a4da42f9cb</md5_checksum>
+        <file_name>everything-i-wanted.flac</file_name>
+    </asset>
+    <track>
+        <vendor_track_id>aaa111</vendor_track_id>
+        <isrc>QM7G92017457</isrc>
+        <track_number>1</track_number>
+        <title>Everything I Wanted</title>
+        <track_length>181</track_length>
+        <advisory>explicit</advisory>
+        <audio_language>English</audio_language>
+        <bpm>120</bpm>
+        <preview_start>30</preview_start>
+        <preview_duration>30</preview_duration>
+        <display_artist>Billie Eilish</display_artist>
+        <participant>
+            <role>Main Artist</role>
+            <name>Billie Eilish</name>
+            <primary>true</primary>
+        </participant>
+        <participant>
+            <role>Song Writer</role>
+            <name>Finneas O'Connell</name>
+            <primary>false</primary>
+        </participant>
+        <text>
+            <type>Lyrics</type>
+            <language>English</language>
+            <content>As long as I'm here
+                                No one can hurt you
+                                Don't wanna lie here
+                                But you can learn to
+                                If I could change
+                                The way that you see yourself
+                                You wouldn't wonder why you hear
+                                They don't deserve you</content>
+        </text>
+        <c_info>Billie Eilish, under exclusive license to Slingshot Records</c_info>
+        <c_year>2020</c_year>
+        <p_info>Billie Eilish, under exclusive license to Slingshot Records</p_info>
+        <p_year>2020</p_year>
+        <rights_holders>Billie Eilish, Slingshot Media</rights_holders>
+        <price_tier>
+            <type>iTunes</type>
+            <name>Mid</name>
+        </price_tier>
+        <attr>
+            <type>string</type>
+            <key>ss_id</key>
+            <value>test1234</value>
+        </attr>
+    </track>
+    <dsp_delivery>
+        <dsp>spotify</dsp>
+        <action>add</action>
+        <delivery_date>2021-02-12T00:00:00.000Z</delivery_date>
+    </dsp_delivery>
+    <attr>
+        <type>string</type>
+        <key>ss_id</key>
+        <value>1234test</value>
+    </attr>
+</release>

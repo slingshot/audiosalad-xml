@@ -1,0 +1,512 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" 
+            targetNamespace="audiosalad_export_v3.2"
+            xmlns="audiosalad_export_v3.2"
+			elementFormDefault="qualified">
+	<xs:element name="release">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="schema_id" minOccurs="1" fixed="audiosalad_export_v3.2"/>
+				
+				<!-- distributor_name: Usually the vendor name -->
+				<xs:element name="distributor_name" minOccurs="0" type="xs:string"/>
+				
+				<!-- export_id: Any proprietary data export identifier for the data extract as used by the data provider. Appears only for information purposes within Audio Salad -->
+				<xs:element name="export_id" minOccurs="0" type="xs:string"/>
+				
+				<!-- export_time: format should be eg. 2019-06-11T16:34:41Z -->
+				<xs:element name="export_time" minOccurs="0" type="xs:dateTime"/>
+				
+				<!-- action: Audio Salad data operation for the xml file (add/update/etc) -->
+				<xs:element name="action" minOccurs="1" type="action_type"/>
+				
+				<!-- upc_ean: The barcode of this release -->
+				<xs:element name="upc_ean" minOccurs="0" type="upc_ean_type"/>
+				
+				<!-- vendor_release_id: Proprietary release identifier as used by the vendor. Appears only for information purposes within Audio Salad -->
+				<xs:element name="vendor_release_id" minOccurs="0" type="xs:string"/>
+				
+				<!-- global_release_id: Audio Salad release identifier -->
+				<xs:element name="global_release_id" minOccurs="0" type="xs:string"/>
+				
+				<!-- catalog_id: The catalog number for this release -->
+				<xs:element name="catalog_id" minOccurs="0" type="xs:string"/>
+				
+				<!-- series: Number of this releases within a multi-part or multi-volume series -->
+				<xs:element name="series" minOccurs="0" type="xs:string"/>
+				
+				<!-- title: Album/release title, minus any title version -->
+				<xs:element name="title" minOccurs="1" type="xs:string"/>
+				
+				<!-- title_version: eg. Remixes -->
+				<xs:element name="title_version" minOccurs="0" type="xs:string"/>
+				
+				<!-- advisory: Parental advisory status of the release. Omitting is equivalent to None -->
+                <xs:element name="advisory" minOccurs="0" type="advisory_type"/>
+				
+				<!-- metadata_language: Language of release and track titles, versions etc. Should be a capitalized language name eg. French rather than a code -->				
+                <xs:element name="metadata_language" minOccurs="0" type="xs:string"/>
+
+				<!-- audio_language: Language of the vocals. Can be overridden at the track level. Again, should be a capitalized language name -->				
+                <xs:element name="audio_language" minOccurs="0" type="xs:string"/>
+
+				<!-- display_artist: As appears on the release -->				
+				<xs:element name="display_artist" minOccurs="1" type="xs:string"/>
+
+				<!-- participant: A potential sequence of the release-level participant_type elements -->		
+                <xs:element name="participant" minOccurs="0" maxOccurs="unbounded" type="participant_type"/>
+
+				<!-- compilation: true/false boolean flag. Omitting is equivalent to false -->	
+                <xs:element name="compilation" minOccurs="0" type="xs:boolean"/>
+
+				<!-- original_release_date: Original release date of this title. If not a re-release, this will match the release_date. Format yyyy-mm-dd -->	
+				<xs:element name="original_release_date" minOccurs="0" type="partial_date"/>
+
+				<!-- release_date: Format yyyy-mm-dd -->					
+				<xs:element name="release_date" minOccurs="0" type="xs:date"/>
+
+				<!-- release_format: Single, Album, etc -->
+				<xs:element name="release_format" minOccurs="0" type="format_type"/>
+
+				<!-- recording_location: 2 character ISO country code -->
+                <xs:element name="recording_location" minOccurs="0" type="country_code_type"/>
+				
+				<!-- url: eg. URL of the band website or smart URL of the release -->				
+                <xs:element name="url" minOccurs="0" type="xs:string"/>
+				
+				<!-- genre: A potential sequence of genre_type elements, each describing the release at either one or two levels of granularity -->	
+                <xs:element name="genre" minOccurs="0" maxOccurs="unbounded" type="genre_type"/>
+				
+                <!-- tag: A potential sequence of tags, used for custom organization eg. mood/theme -->	
+                <xs:element name="tag" minOccurs="0" maxOccurs="unbounded" type="xs:string"/>
+				
+				<!-- notes: Any notes to be shown only in Audio Salad -->	
+				<xs:element name="notes" minOccurs="0" type="xs:string"/>
+				
+				<!-- text: a potential sequence of text_type elements, generally used to provide a product description, reviews, liner notes -->	
+                <xs:element name="text" minOccurs="0" maxOccurs="unbounded" type="text_type"/>
+				
+				<!-- c_info: The owner of the copyright for the release (often the label name), as it appears on the product copyright legend -->	
+				<xs:element name="c_info" minOccurs="0" type="xs:string"/>
+				
+				<!-- c_year: The copyright year, as it appears on the product copyright legend -->
+            	<xs:element name="c_year" minOccurs="0" type="xs:gYear"/>
+				
+				<!-- p_info: The owner of the phonographic copyright for the release (often the label name), as it appears on the product phonographic copyright legend -->	
+				<xs:element name="p_info" minOccurs="0" type="xs:string"/>
+				
+				<!-- p_year: The phonographic copyright year, as it appears on the product phonographic copyright legend -->
+            	<xs:element name="p_year" minOccurs="0" type="xs:gYear"/>
+				
+				<!-- rights_holders: The full name of the musical rights holder, often the label name-->
+				<xs:element name="rights_holders" minOccurs="0" type="xs:string"/>
+				
+				<!-- label: A label_type element giving details of the record label -->
+                <xs:element name="label" minOccurs="0" type="label_type"/>
+				
+				<!-- price_tier: A potential sequence of price_tier elements conveying at what level the release is to be priced --> 
+                <xs:element name="price_tier" minOccurs="0" maxOccurs="unbounded" type="price_tier_type"/>
+				
+				<!-- permission: A potential sequence of permission_type elements conveying when and where the release has been licensed for pre-order etc --> 
+                <xs:element name="permission" minOccurs="0" maxOccurs="unbounded" type="permission_type"/>
+				
+                <!-- global_release_datetime: optional date and time specifier for global timed release eg. 2019-01-01T00:00:00Z -->
+                <xs:element name="global_release_date" minOccurs="0" maxOccurs="1" type="xs:dateTime"/>
+                
+				<!-- territory: A potential sequence of territory_type elements conveying when and where the release has been made to --> 
+				<xs:element name="territory" minOccurs="0" maxOccurs="unbounded" type="territory_type"/>
+				
+				<!-- asset: A potential sequence of asset_type elements for images, music videos, documentation etc --> 
+				<xs:element name="asset" minOccurs="0" maxOccurs="unbounded" type="asset_type"/>
+				
+				<!-- track: A potential sequence of track_type elements associated with the release --> 
+				<xs:element name="track" maxOccurs="unbounded" type="track_type"/>
+                
+                <!-- dsp_delivery: optional dsp delivery directives for this release -->
+                <xs:element name="dsp_delivery" minOccurs="0" maxOccurs="unbounded" type="dsp_delivery_type"/>
+                
+                <!-- attr: optional extended key/value pair attributes -->
+                <xs:element name="attr" minOccurs="0" maxOccurs="unbounded" type="attr_type"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>				
+				
+	<!-- track_type: Describes a single audio track within the release -->			
+	<xs:complexType name="track_type">
+		<xs:sequence>
+			<!-- vendor_track_id: Any proprietary release identifier as used by the vendor. Appears for information purposes only within Audio Salad -->
+			<xs:element name="vendor_track_id" minOccurs="0" type="xs:string"/>
+			
+			<!-- isrc: The International Standard Recording Code for the recording -->
+			<xs:element name="isrc" minOccurs="0" type="isrc_type"/>
+			
+			<!-- iswc: The International Standard Work Code for the musical work -->
+			<xs:element name="iswc" minOccurs="0" type="iswc_type"/>
+			
+			<!-- disc_number: Will be 1 unless it is part of a multi-disc release -->
+			<xs:element name="disc_number" minOccurs="0" type="xs:unsignedInt"/>
+			
+			<!-- track_number: Track number within the disc -->
+			<xs:element name="track_number" type="xs:unsignedInt"/>   
+			
+			<!-- title: Track title, minus any title version -->
+			<xs:element name="title" type="xs:string"/>
+			
+			<!-- title_version: eg. Radio Edit -->
+			<xs:element name="title_version" minOccurs="0" type="xs:string"/>
+			
+			<!-- work: Specific to classical content. If track is part of a longer continuous musical work -->
+			<xs:element name="work" minOccurs="0" type="xs:string"/>
+			
+			<!-- track_length: In seconds -->
+			<xs:element name="track_length" minOccurs="0" type="xs:unsignedInt"/>
+            
+			<!-- advisory: Parental advisory classification of the track. Omitting implies not explicit -->
+			<xs:element name="advisory" minOccurs="0" type="advisory_type"/>
+			
+			<!-- audio_language: Language of the track lyrics. Should be a capitalized language name. Value overrides the equivalent release-level value -->
+			<xs:element name="audio_language" minOccurs="0" type="xs:string"/>
+			
+			<!-- bpm: Number of beats per minute -->
+			<xs:element name="bpm" minOccurs="0" type="xs:unsignedInt"/>
+			
+            <!-- preview_start: In seconds -->
+            <xs:element name="preview_start" minOccurs="0" type="xs:unsignedInt"/>
+            
+            <!-- preview_duration: In seconds -->
+            <xs:element name="preview_duration" minOccurs="0" type="xs:unsignedInt"/>
+            
+			<!-- display_artist: As appears on the track listing -->
+			<xs:element name="display_artist" type="xs:string"/>
+			
+			<!-- participant: A potential sequence of the track-level participant_type elements -->		
+            <xs:element name="participant" minOccurs="0" maxOccurs="unbounded" type="participant_type"/>
+			
+			<!-- genre: A potential sequence of genre_type elements, each describing the track at either one or two levels of granularity -->	
+            <xs:element name="genre" minOccurs="0" maxOccurs="unbounded" type="genre_type"/>
+			
+			<!-- tag: potential sequence of tags, used for used for custom organization eg. mood/theme -->	
+            <xs:element name="tag" minOccurs="0" maxOccurs="unbounded" type="xs:string"/>
+			
+			<!-- notes: Any notes to be shown only in Audio Salad  -->	
+			<xs:element name="notes" minOccurs="0" type="xs:string"/>
+			
+			<!-- text: a potential sequence of text_type elements, generally used for track lyrics -->	
+			<xs:element name="text" minOccurs="0" maxOccurs="unbounded" type="text_type"/>
+			
+			<!-- c_info: The owner of the copyright for the release (often the label name), as it appears on the product copyright legend -->	
+			<xs:element name="c_info" minOccurs="0" type="xs:string"/>
+			
+			<!-- c_year: The phonographic copyright year, as it appears on the product phonographic copyright legend -->
+			<xs:element name="c_year" minOccurs="0" type="xs:gYear"/>
+			
+			<!-- p_info: The owner of the phonographic copyright for the release (often the label name), as it appears on the product phonographic copyright legend -->	
+			<xs:element name="p_info" minOccurs="0" type="xs:string"/>
+			
+			<!-- p_year: The phonographic copyright year, as it appears on the product phonographic copyright legend -->
+			<xs:element name="p_year" minOccurs="0" type="xs:gYear"/>
+			
+			<!-- rights_holders: The full name of the musical rights holder, often the label name -->
+			<xs:element name="rights_holders" minOccurs="0" type="xs:string"/>
+			
+            <!-- price_tier: A potential sequence of price_tier elements conveying at what level the track is to be priced (currently unsupported in Audiosalad) -->
+            <xs:element name="price_tier" minOccurs="0" maxOccurs="unbounded" type="price_tier_type"/>
+            
+			<!-- permission: A potential sequence of permission_type elements conveying when and where the release has been licensed for download, streaming etc --> 
+			<xs:element name="permission" minOccurs="0" maxOccurs="unbounded" type="permission_type"/>
+			
+			<!-- territory: A potential sequence of territory_type elements conveying when and where the track has been released --> 
+			<xs:element name="territory" minOccurs="0" maxOccurs="unbounded" type="territory_type"/>
+			
+			<!-- asset: A potential sequence of asset_type elements for the track, crucially including the recording itself etc --> 
+			<xs:element name="asset" minOccurs="0" maxOccurs="unbounded" type="asset_type"/>
+            
+            <!-- attr: optional extended key/value pair attributes -->
+            <xs:element name="attr" minOccurs="0" maxOccurs="unbounded" type="attr_type"/>
+		</xs:sequence>
+	</xs:complexType>
+    
+	<!-- label_type: Describes the record label that has produced a given release, the name being the only mandatory element -->
+    <xs:complexType name="label_type">
+        <xs:sequence>
+			<!-- vendor_label_id: identifier as it appears in Audio Salad -->
+            <xs:element name="vendor_label_id" minOccurs="0" maxOccurs="1" type="xs:string"/>
+			
+			<!-- name: full name of the record label, as it appears/is to appear in Audio Salad -->
+            <xs:element name="name" minOccurs="1" maxOccurs="1" type="xs:string"/>
+			
+			<!-- city/state/country: Country to appear as a capitalized country name rather than a code -->
+            <xs:element name="city" minOccurs="0" maxOccurs="1" type="xs:string"/>
+			<xs:element name="state" minOccurs="0" maxOccurs="1" type="xs:string"/>
+			<xs:element name="country" minOccurs="0" maxOccurs="1" type="xs:string"/>
+			
+			<!-- url: Of the company website -->
+            <xs:element name="url" minOccurs="0" maxOccurs="1" type="xs:string"/>
+			
+			<!-- notes: Any label description, history etc for display within Audio Salad -->
+            <xs:element name="notes" minOccurs="0" maxOccurs="1" type="xs:string"/>
+        </xs:sequence>
+    </xs:complexType>
+        
+	<!-- participant_type: Describes a participant who has been involved in a recording or a release, inc. musicians, vocalists, producers, engineers, etc  -->
+    <xs:complexType name="participant_type">
+        <xs:sequence>
+			<!-- role: eg. Primary Artist, Main Artist, Featured Artist, Vocalist, Producer, Remixer, Mixer, Composer, Conductor, Soloist
+			               Performer, Arranger, Song Writer, Engineer, Choir, Orchestra, Ensemble, Lyricist, Publisher, Other -->
+            <xs:element name="role" minOccurs="1" maxOccurs="1" type="xs:string"/>
+		
+			<!-- role_type: Optional sub-role for vendor use. e.g. Executive Producer, Masterer -->			
+			<xs:element name="role_type" minOccurs="0" maxOccurs="1" type="xs:string"/>
+
+			<!-- instrument: Generally for use with the Performer role eg. Guitar, Drums, Programming & Keyboards -->
+			<xs:element name="instrument" minOccurs="0" maxOccurs="1" type="xs:string"/>
+
+			<!-- name: The full name of the person -->
+            <xs:element name="name" minOccurs="1" maxOccurs="1" type="xs:string"/>
+			
+			<!-- primary: true for eg. primary artist, conductor... If omitted then same as false -->
+            <xs:element name="primary" minOccurs="0" maxOccurs="1" type="xs:boolean"/>
+            
+            <!-- artist_id: third party artist id for this participant -->
+            <xs:element name="artist_id" minOccurs="0" maxOccurs="unbounded" type="proprietary_id_type"/>
+        </xs:sequence>
+    </xs:complexType>
+	
+	<!-- genre_type: The genre of a release or recording, supporting 2-levels of detail  -->
+    <xs:complexType name="genre_type">
+        <xs:sequence>
+			<!-- primary: eg. Electronic -->
+            <xs:element name="primary" minOccurs="1" maxOccurs="1" type="xs:string"/>
+			
+			<!-- sub: eg. Techno -->			
+            <xs:element name="sub" minOccurs="0" maxOccurs="1" type="xs:string"/>
+        </xs:sequence>
+    </xs:complexType>
+	
+	<!-- permission_type: A date and region-bounded distribution permission -->
+	<xs:complexType name="permission_type">
+        <xs:sequence>
+			<!-- type: Release level eg. preorder
+			           Track level eg. stream, download, subscription, track_sale -->	
+            <xs:element name="type" minOccurs="1" maxOccurs="1" type="xs:string"/>
+			
+			<!-- enabled: explicitly defines whether this permission has been granted or not -->
+            <xs:element name="enabled" minOccurs="1" maxOccurs="1" type="xs:boolean"/>
+			
+			<!-- start_date, end_date: the date range for which this permission applies. Format eg. 2017-01-01T00:00:00Z -->	
+            <xs:element name="start_date" minOccurs="0" maxOccurs="1" type="xs:dateTime"/>
+            <xs:element name="end_date" minOccurs="0" maxOccurs="1" type="xs:dateTime"/>
+			
+			<!-- country_code: 2 character ISO country code or WW for worldwide -->
+            <xs:element name="country_code" minOccurs="0" maxOccurs="unbounded" type="country_code_type"/>
+        </xs:sequence>
+	</xs:complexType>
+
+	<!-- price_tier_type: A pricing tier identifier as applies to a download platform -->
+    <xs:complexType name="price_tier_type">
+        <xs:sequence>
+			<!-- type: The platform for which this tier applies eg. itunes, generic -->	
+            <xs:element name="type" minOccurs="1" maxOccurs="1" type="xs:string"/>
+			<!-- name: The actual identifier eg. Mid/Front, Budget One -->
+            <xs:element name="name" minOccurs="1" maxOccurs="1" type="xs:string"/>
+        </xs:sequence>
+	</xs:complexType>
+	
+	<!-- asset_type: encapsulates a file asset, be it an audio recording, artwork image, etc -->
+    <xs:complexType name="asset_type">
+		<xs:sequence>
+			<!-- type: e.g. audio, image, asset (for arbitrary files such as eg. pdf documents) -->	
+            <xs:element name="type" minOccurs="1" maxOccurs="1" type="xs:string"/>
+			
+			<!-- subtype: the Audio Salad media type e.g. wav, Front (or for arbitrary files eg. Document) -->	
+            <xs:element name="sub_type" minOccurs="0" maxOccurs="1" type="xs:string"/>
+			
+			<!-- name: An optional descriptive name -->
+            <xs:element name="name" minOccurs="0" maxOccurs="1" type="xs:string"/>
+			
+			<!-- notes: Any textual notes to accompany the asset -->
+            <xs:element name="notes" minOccurs="0" maxOccurs="1" type="xs:string"/>
+			
+			<!-- format: the format of the file, generally the same as the file extension eg. wav, jpg, pdf -->
+            <xs:element name="format" minOccurs="0" maxOccurs="1" type="xs:string"/>
+			
+			<!-- mime-type: e.g. video/wav, image/jpg, application/pdf -->
+            <xs:element name="mime_type" minOccurs="0" maxOccurs="1" type="xs:string"/>
+			
+			<!-- md5_checksum: 128 bit MD5 file hash value eg. 79054025255fb1a26e4bc422aef54eb4 -->
+			<xs:element name="md5_checksum" minOccurs="1" maxOccurs="1" type="xs:string"/>
+			
+			<!-- file_name: the real filename with extension (if applicable) and without folder structure as is appears on disk -->	
+			<xs:element name="file_name" minOccurs="1" maxOccurs="1" type="xs:string"/>
+            
+            <!-- attr: optional extended key/value pair attributes -->
+            <xs:element name="attr" minOccurs="0" maxOccurs="unbounded" type="attr_type"/>
+		</xs:sequence>
+	</xs:complexType>
+
+	<!-- text_type: encapsulates a piece of textual information -->
+    <xs:complexType name="text_type">
+		<xs:sequence>
+			<!-- type: Release level eg. Liner Notes, Memo, Review, Other
+			           Track level eg. Lyrics, Lyrics TTML, Notes -->	
+			<xs:element name="type" minOccurs="0" maxOccurs="1" type="xs:string"/>
+			
+			<!-- language: Should be a capitalized language name eg. French rather than a code -->	
+			<xs:element name="language" minOccurs="0" maxOccurs="1" type="xs:string"/>
+			
+			<!-- content: The plaintext or html content -->	
+			<xs:element name="content" minOccurs="1" maxOccurs="1" type="xs:string"/>
+		</xs:sequence>
+	</xs:complexType>
+	
+	<!-- country_code_type: a 2 character ISO country code or WW for worldwide -->
+    <xs:simpleType name="country_code_type">
+        <xs:restriction base="xs:string">
+            <xs:maxLength value="2"/>
+            <xs:minLength value="2"/>
+            <xs:pattern value="[A-Za-z]{2}"/>
+        </xs:restriction>
+    </xs:simpleType>
+    
+	<!-- territory_type: encapsulates a release or tracks presence within a given place -->
+    <xs:complexType name="territory_type">
+        <xs:sequence>
+			<!-- country_code: ISO code or WW for worldwide -->
+            <xs:element name="country_code" minOccurs="1" maxOccurs="unbounded" type="country_code_type"/>
+			
+			<!-- release_date: format e.g. 2017-08-12T00:00:00Z -->
+            <xs:element name="release_date" minOccurs="0" maxOccurs="1" type="xs:dateTime"/>
+			
+			<!-- permission: a potential sequence of permission_type elements, if these need to be overridden at the territory level (currently unsupported in Audiosalad) -->
+            <xs:element name="permission" minOccurs="0" maxOccurs="unbounded" type="permission_type"/>
+        </xs:sequence>
+    </xs:complexType>
+	
+	<!-- isrc_type: International Standard Recording Code - track-level unique identifier of a recording -->
+    <xs:simpleType name="isrc_type">
+        <xs:restriction base="xs:string">
+            <xs:maxLength value="12"/>
+            <xs:minLength value="12"/>
+            <xs:pattern value="[A-Za-z0-9]{5}[0-9]{2}[A-Za-z0-9]{5}"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+	<!-- iswc_type: International Standard Work Code - track-level unique identifier of a musical work (irrespective of adaptation or arrangement) ISWC(1)<->(n)ISRC -->
+    <xs:simpleType name="iswc_type">
+        <xs:restriction base="xs:string">
+            <xs:maxLength value="11"/>
+            <xs:minLength value="11"/>
+            <xs:pattern value="[a-zA-Z]{1}[0-9]{10}"/>
+        </xs:restriction>
+    </xs:simpleType>
+    
+	<!-- upc_ean_type: The barcode id of a release - 12-digit Universal Product Code (US) or 13-digit European Article Number (International) -->
+    <xs:simpleType name="upc_ean_type">
+        <xs:restriction base="xs:string">
+            <xs:minLength value="12"/>
+            <xs:maxLength value="13"/>
+            <xs:pattern value="[0-9]*"/>
+        </xs:restriction>
+    </xs:simpleType>
+	
+	<!-- action_type : Enumerates the allowable Audio Salad XML file ingestion operations -->
+	<xs:simpleType name="action_type">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="add"/>
+            <xs:enumeration value="update"/>
+            <xs:enumeration value="full-update"/>
+            <xs:enumeration value="meta-update"/>
+            <xs:enumeration value="delete"/>
+        </xs:restriction>
+    </xs:simpleType>
+	
+    <!-- advisory_type : Enumerates the allowable parental advisory operations -->
+	<xs:simpleType name="advisory_type">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="None"/>       <!-- No explicit content -->
+            <xs:enumeration value="none"/>
+            <xs:enumeration value="Clean"/>      <!-- Explicit content has been edited out in this version -->
+            <xs:enumeration value="clean"/>
+            <xs:enumeration value="Explicit"/>   <!-- Content is explicit in nature -->
+            <xs:enumeration value="explicit"/>
+        </xs:restriction>
+    </xs:simpleType>
+	
+    <!-- format_type : Enumerates the recording formats recognized in Audio Salad -->
+    <xs:simpleType name="format_type">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="Digital"/>
+            <xs:enumeration value="digital"/>
+            <xs:enumeration value="Single"/>
+            <xs:enumeration value="single"/>
+            <xs:enumeration value="EP"/>
+            <xs:enumeration value="ep"/>
+            <xs:enumeration value="Album"/>
+            <xs:enumeration value="album"/>
+            <xs:enumeration value="Double Album"/>
+            <xs:enumeration value="double album"/>
+            <xs:enumeration value="Box Set"/>
+            <xs:enumeration value="box set"/>
+            <xs:enumeration value="Live Performance"/>
+            <xs:enumeration value="live performance"/>
+            <xs:enumeration value="Classical Album"/>
+            <xs:enumeration value="classical album"/>
+            <xs:enumeration value="Video"/>
+            <xs:enumeration value="video"/>
+        </xs:restriction>
+    </xs:simpleType>
+    
+    <!-- dsp_delivery_type: defines a delivery to s set of dsps -->
+    <xs:complexType name="dsp_delivery_type">
+        <xs:sequence>
+            <!-- dsp: dsp identifier for which to target this delivery  -->
+            <xs:element name="dsp" minOccurs="1" maxOccurs="unbounded" type="xs:string"/>
+
+            <!-- action: delivery action/operation -->
+            <xs:element name="action" minOccurs="1" maxOccurs="1" type="action_type"/>
+
+            <!-- delivery_date: scheduled delivery date, may be omitted for asap - format e.g. 2017-08-12T00:00:00Z -->
+            <xs:element name="delivery_date" minOccurs="0" maxOccurs="1" type="xs:dateTime"/>
+        </xs:sequence>
+    </xs:complexType>
+    
+    <!-- proprietary_id_type: represents a proprietary id eg. for spotify, apple artist ids -->
+    <xs:complexType name="proprietary_id_type">
+        <xs:sequence>
+            <!-- type: what type of identifier is this eg. spotify -->
+            <xs:element name="type" minOccurs="1" maxOccurs="1" type="xs:string"/>
+            <!-- id: the actual identifier -->
+            <xs:element name="id" minOccurs="1" maxOccurs="1" type="xs:string"/>
+        </xs:sequence>
+    </xs:complexType>
+    
+    <xs:simpleType name="partial_date">
+        <xs:union memberTypes="xs:date xs:gYearMonth xs:gYear" />
+    </xs:simpleType>
+    
+    <!-- attr_type_type : base types for an attribute -->
+    <xs:simpleType name="attr_type_type">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="integer"/>
+            <xs:enumeration value="float"/>
+            <xs:enumeration value="boolean"/>
+            <xs:enumeration value="date"/>
+            <xs:enumeration value="string"/>
+            <xs:enumeration value="data"/>
+        </xs:restriction>
+    </xs:simpleType>
+        
+    <!-- attr_type: encapsulates a generic key/value pair attribute -->
+    <xs:complexType name="attr_type">
+        <xs:sequence>
+            <xs:element name="type" minOccurs="0" maxOccurs="1" type="attr_type_type"/>
+            <xs:element name="key" minOccurs="1" maxOccurs="1" type="xs:string"/>
+            <xs:element name="value" minOccurs="1" maxOccurs="1" type="xs:string"/>
+        </xs:sequence>
+    </xs:complexType>
+    
+</xs:schema>
+
+
+
+
