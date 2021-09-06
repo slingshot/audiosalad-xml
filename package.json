@@ -58,5 +58,8 @@
     },
     "dependencies": {
         "xml-formatter": "^2.4.0"
+    },
+    "publishConfig": {
+        "access": "public"
     }
 }
