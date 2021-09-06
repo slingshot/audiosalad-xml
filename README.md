@@ -6,6 +6,6 @@ Install the package to get started:
 > npm install @ssh/audiosalad-xml --save
 
 ## Basic Usage
-Create a new `Release` with relevant fields. Call `.xml()` on a `Release` or any other similar object to generate AudioSalad-compatible XML.
+Create a new [Release](https://slingshot.github.io/audiosalad-xml/classes/Release) with relevant fields. Call [.xml()](https://slingshot.github.io/audiosalad-xml/classes/Release.html#xml) on a `Release` (or other objects, as per docs) to generate AudioSalad-compatible XML.
 
-(More docs coming soon)
+See detailed docs at [slingshot.github.io/audiosalad-xml](https://slingshot.github.io/audiosalad-xml/).
