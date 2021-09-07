@@ -1,3 +1,4 @@
+import xmlEscape from 'xml-escape';
 import { iTunesPriceTier } from './PriceTier.enum';
 import { AudioSaladXML } from './AudioSaladXML';
 import { formatXml } from '../formatter';
@@ -32,8 +33,8 @@ export class PriceTier {
     xml(): AudioSaladXML {
         return formatXml(`
             <price_tier>
-                 <type>${this.type}</type>
-                 <name>${this.name}</name>
+                 <type>${xmlEscape(this.type)}</type>
+                 <name>${xmlEscape(this.name)}</name>
             </price_tier>
         `) as AudioSaladXML;
     }

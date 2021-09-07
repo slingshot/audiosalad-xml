@@ -1,3 +1,4 @@
+import xmlEscape from 'xml-escape';
 import { ParticipantRole } from './ParticipantRole.enum';
 import { ProprietaryID } from './ProprietaryID';
 import { AudioSaladXML } from './AudioSaladXML';
@@ -55,10 +56,10 @@ export class Participant {
     xml(): AudioSaladXML {
         return formatXml(`
             <participant>
-                <role>${this.role}</role>
-                ${this.roleType ? `<role_type>${this.roleType}</role_type>` : ''}
-                ${this.instrument ? `<instrument>${this.instrument}</instrument>` : ''}
-                <name>${this.name.trim()}</name>
+                <role>${xmlEscape(this.role)}</role>
+                ${this.roleType ? `<role_type>${xmlEscape(this.roleType)}</role_type>` : ''}
+                ${this.instrument ? `<instrument>${xmlEscape(this.instrument)}</instrument>` : ''}
+                <name>${xmlEscape(this.name).trim()}</name>
                 <primary>${this.primary}</primary>
                 ${this.artistID?.forEach((id: ProprietaryID) => id.xml()) ?? ''}
             </participant>

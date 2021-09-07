@@ -1,3 +1,4 @@
+import xmlEscape from 'xml-escape';
 import { AudioSaladXML } from './AudioSaladXML';
 import { formatXml } from '../formatter';
 
@@ -22,8 +23,8 @@ export class ProprietaryID {
     xml(): AudioSaladXML {
         return formatXml(`
             <artist_id>
-                <type>${this.type}</type>
-                <id>${this.id}</id>                                        
+                <type>${xmlEscape(this.type)}</type>
+                <id>${xmlEscape(this.id)}</id>                                        
             </artist_id>
         `) as AudioSaladXML;
     }

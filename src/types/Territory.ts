@@ -1,3 +1,4 @@
+import xmlEscape from 'xml-escape';
 import { CountryCode } from './Country.enum';
 import { Permission } from './Permission';
 import { AudioSaladXML } from './AudioSaladXML';
@@ -41,8 +42,8 @@ export class Territory {
     xml(): AudioSaladXML {
         return formatXml(`
             <territory>
-                 <country_code>${this.countryCode}</country_code>
-                 ${this.releaseDate ? `<release_date>${this.releaseDate}</release_date>` : ''}
+                 ${this.countryCode.map((code) => `<country_code>${xmlEscape(code)}</country_code>`)}
+                 ${this.releaseDate ? `<release_date>${xmlEscape(this.releaseDate.toISOString())}</release_date>` : ''}
                  ${this.permissions?.forEach((permission: Permission) => permission.xml()) ?? ''}
             </territory>
         `) as AudioSaladXML;

@@ -1,3 +1,4 @@
+import xmlEscape from 'xml-escape';
 import { ReleaseTextType, TrackTextType } from './Text.enum';
 import { AudioSaladXML } from './AudioSaladXML';
 import { formatXml } from '../formatter';
@@ -38,9 +39,9 @@ export class Text {
     xml(): AudioSaladXML {
         return formatXml(`
             <text>
-                ${this.type ? `<type>${this.type}</type>` : ''}
-                ${this.language ? `<language>${this.language}</language>` : ''}
-                <content>${this.content}</content>
+                ${this.type ? `<type>${xmlEscape(this.type)}</type>` : ''}
+                ${this.language ? `<language>${xmlEscape(this.language)}</language>` : ''}
+                <content>${xmlEscape(this.content)}</content>
             </text>
         `) as AudioSaladXML;
     }

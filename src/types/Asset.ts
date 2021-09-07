@@ -1,3 +1,4 @@
+import xmlEscape from 'xml-escape';
 import { Attr } from './Attr';
 import { AudioSaladXML } from './AudioSaladXML';
 import { formatXml } from '../formatter';
@@ -72,14 +73,14 @@ export class Asset {
     xml(): AudioSaladXML {
         return formatXml(`
             <asset>
-                <type>${this.type}</type>
-                ${this.subtype ? `<sub_type>${this.subtype}</sub_type>` : ''}
-                ${this.name ? `<name>${this.name}</name>` : ''}
-                ${this.notes ? `<notes>${this.notes}</notes>` : ''}
-                ${this.format ? `<format>${this.format}</format>` : ''}
-                ${this.mimeType ? `<mime_type>${this.mimeType}</mime_type>` : ''}
-                <md5_checksum>${this.md5Checksum}</md5_checksum>
-                <file_name>${this.fileName}</file_name>
+                <type>${xmlEscape(this.type)}</type>
+                ${this.subtype ? `<sub_type>${xmlEscape(this.subtype)}</sub_type>` : ''}
+                ${this.name ? `<name>${xmlEscape(this.name)}</name>` : ''}
+                ${this.notes ? `<notes>${xmlEscape(this.notes)}</notes>` : ''}
+                ${this.format ? `<format>${xmlEscape(this.format)}</format>` : ''}
+                ${this.mimeType ? `<mime_type>${xmlEscape(this.mimeType)}</mime_type>` : ''}
+                <md5_checksum>${xmlEscape(this.md5Checksum)}</md5_checksum>
+                <file_name>${xmlEscape(this.fileName)}</file_name>
                 ${this.attr?.forEach((attr: Attr) => attr.xml()) ?? ''}
             </asset>
         `) as AudioSaladXML;

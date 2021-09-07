@@ -1,3 +1,4 @@
+import xmlEscape from 'xml-escape';
 import { Participant } from './Participant';
 import { ReleaseFormat } from './ReleaseFormat.enum';
 import { CountryCode, CountryName } from './Country.enum';
@@ -265,41 +266,41 @@ export class Release {
         return formatXml(`
             <release xmlns="audiosalad_export_v3.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="audiosalad_export_v3.2 http://audiosalad-xsd.s3.amazonaws.com/audiosalad_export_v3.2.xsd">
                 <schema_id>audiosalad_export_v3.2</schema_id>
-                ${this.distributorName ? `<distributor_name>${this.distributorName}</distributor_name>` : ''}
-                ${this.exportID ? `<export_id>${this.exportID}</export_id>` : ''}
-                ${this.exportTime ? `<export_time>${this.exportTime.toISOString()}</export_time>` : ''}
-                <action>${this.action}</action>
+                ${this.distributorName ? `<distributor_name>${xmlEscape(this.distributorName)}</distributor_name>` : ''}
+                ${this.exportID ? `<export_id>${xmlEscape(this.exportID)}</export_id>` : ''}
+                ${this.exportTime ? `<export_time>${xmlEscape(this.exportTime.toISOString())}</export_time>` : ''}
+                <action>${xmlEscape(this.action)}</action>
                 ${this.upc ? `<upc_ean>${this.upc}</upc_ean>` : ''}
-                ${this.vendorReleaseID ? `<vendor_release_id>${this.vendorReleaseID}</vendor_release_id>` : ''}
-                ${this.globalReleaseID ? `<global_release_id>${this.globalReleaseID}</global_release_id>` : ''}
-                ${this.catalogID ? `<catalog_id>${this.catalogID}</catalog_id>` : ''}
-                ${this.series ? `<series>${this.series}</series>` : ''}
-                <title>${this.title}</title>
-                ${this.titleVersion ? `<title_version>${this.titleVersion}</title_version>` : ''}
-                ${this.advisory ? `<advisory>${this.advisory}</advisory>` : ''}
-                ${this.metadataLanguage ? `<metadata_language>${this.metadataLanguage}</metadata_language>` : ''}
-                ${this.audioLanguage ? `<audio_language>${this.audioLanguage}</audio_language>` : ''}
-                <display_artist>${this.displayArtist}</display_artist>
+                ${this.vendorReleaseID ? `<vendor_release_id>${xmlEscape(this.vendorReleaseID)}</vendor_release_id>` : ''}
+                ${this.globalReleaseID ? `<global_release_id>${xmlEscape(this.globalReleaseID)}</global_release_id>` : ''}
+                ${this.catalogID ? `<catalog_id>${xmlEscape(this.catalogID)}</catalog_id>` : ''}
+                ${this.series ? `<series>${xmlEscape(this.series)}</series>` : ''}
+                <title>${xmlEscape(this.title)}</title>
+                ${this.titleVersion ? `<title_version>${xmlEscape(this.titleVersion)}</title_version>` : ''}
+                ${this.advisory ? `<advisory>${xmlEscape(this.advisory)}</advisory>` : ''}
+                ${this.metadataLanguage ? `<metadata_language>${xmlEscape(this.metadataLanguage)}</metadata_language>` : ''}
+                ${this.audioLanguage ? `<audio_language>${xmlEscape(this.audioLanguage)}</audio_language>` : ''}
+                <display_artist>${xmlEscape(this.displayArtist)}</display_artist>
                 ${this.participants?.map((participant: Participant) => participant.xml()).join('') ?? ''}               
                 ${this.compilation ? `<compilation>${this.compilation}</compilation>` : ''}
-                ${this.originalReleaseDate ? `<original_release_date>${this.originalReleaseDate.toISOString().split('T')[0]}</original_release_date>` : ''}
-                ${this.releaseDate ? `<release_date>${this.releaseDate.toISOString().split('T')[0]}</release_date>` : ''}
-                ${this.releaseFormat ? `<release_format>${this.releaseFormat}</release_format>` : ''}
-                ${this.recordingLocation ? `<recording_location>${this.recordingLocation}</recording_location>` : ''}
-                ${this.url ? `<url>${this.url}</url>` : ''}
+                ${this.originalReleaseDate ? `<original_release_date>${xmlEscape(this.originalReleaseDate.toISOString().split('T')[0])}</original_release_date>` : ''}
+                ${this.releaseDate ? `<release_date>${xmlEscape(this.releaseDate.toISOString().split('T')[0])}</release_date>` : ''}
+                ${this.releaseFormat ? `<release_format>${xmlEscape(this.releaseFormat)}</release_format>` : ''}
+                ${this.recordingLocation ? `<recording_location>${xmlEscape(this.recordingLocation)}</recording_location>` : ''}
+                ${this.url ? `<url>${xmlEscape(this.url)}</url>` : ''}
                 ${this.genres?.map((genre: GenreType) => genre.xml()).join('') ?? ''}
-                ${this.tags?.map((tag) => `<tag>${tag}</tag>`).join('') ?? ''}
-                ${this.notes ? `<notes>${this.notes}</notes>` : ''}   
+                ${this.tags?.map((tag) => `<tag>${xmlEscape(tag)}</tag>`).join('') ?? ''}
+                ${this.notes ? `<notes>${xmlEscape(this.notes)}</notes>` : ''}   
                 ${this.texts?.map((text: Text) => text.xml()).join('') ?? ''}
-                ${this.cInfo ? `<c_info>${this.cInfo}</c_info>` : ''}   
+                ${this.cInfo ? `<c_info>${xmlEscape(this.cInfo)}</c_info>` : ''}   
                 ${this.cYear ? `<c_year>${this.cYear}</c_year>` : ''} 
-                ${this.pInfo ? `<p_info>${this.pInfo}</p_info>` : ''}   
+                ${this.pInfo ? `<p_info>${xmlEscape(this.pInfo)}</p_info>` : ''}   
                 ${this.pYear ? `<p_year>${this.pYear}</p_year>` : ''} 
-                ${this.rightsHolders ? `<rights_holders>${this.rightsHolders}</rights_holders>` : ''}
+                ${this.rightsHolders ? `<rights_holders>${xmlEscape(this.rightsHolders)}</rights_holders>` : ''}
                 ${this.label ? this.label.xml() : ''}
                 ${this.priceTiers?.map((tier: PriceTier) => tier.xml()).join('') ?? ''}
                 ${this.permissions?.map((permission: Permission) => permission.xml()).join('') ?? ''}
-                ${this.globalReleaseDate ? `<global_release_date>${this.globalReleaseDate.toISOString()}</global_release_date>` : ''}
+                ${this.globalReleaseDate ? `<global_release_date>${xmlEscape(this.globalReleaseDate.toISOString())}</global_release_date>` : ''}
                 ${this.territories?.map((territory: Territory) => territory.xml()).join('') ?? ''}
                 ${this.assets?.map((asset: Asset) => asset.xml()).join('') ?? ''}
                 ${this.tracks.map((track: Track) => track.xml()).join('')}

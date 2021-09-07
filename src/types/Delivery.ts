@@ -1,3 +1,4 @@
+import xmlEscape from 'xml-escape';
 import { Action } from './Action.enum';
 import { AudioSaladXML } from './AudioSaladXML';
 import { formatXml } from '../formatter';
@@ -36,9 +37,9 @@ export class Delivery {
     xml(): AudioSaladXML {
         return formatXml(`
             <dsp_delivery>
-                 ${this.dsps.map((dsp) => `<dsp>${dsp}</dsp>`)}
+                 ${this.dsps.map((dsp) => `<dsp>${xmlEscape(dsp)}</dsp>`)}
                  <action>${this.action}</action>
-                 ${this.deliveryDate ? `<delivery_date>${this.deliveryDate.toISOString()}</delivery_date>` : ''}
+                 ${this.deliveryDate ? `<delivery_date>${xmlEscape(this.deliveryDate.toISOString())}</delivery_date>` : ''}
             </dsp_delivery>
         `) as AudioSaladXML;
     }

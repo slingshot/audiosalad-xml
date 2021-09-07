@@ -1,3 +1,4 @@
+import xmlEscape from 'xml-escape';
 import { CountryName } from './Country.enum';
 import { AudioSaladXML } from './AudioSaladXML';
 import { formatXml } from '../formatter';
@@ -48,11 +49,11 @@ export class Label {
     xml(): AudioSaladXML {
         return formatXml(`
             <label>
-                ${this.vendorLabelID ? `<vendor_label_id>${this.vendorLabelID}</vendor_label_id>` : ''}
-                <name>${this.name}</name>
-                ${this.city ? `<city>${this.city}</city>` : ''}
-                ${this.state ? `<state>${this.state}</state>` : ''}
-                ${this.country ? `<country>${this.country}</country>` : ''}                        
+                ${this.vendorLabelID ? `<vendor_label_id>${xmlEscape(this.vendorLabelID)}</vendor_label_id>` : ''}
+                <name>${xmlEscape(this.name)}</name>
+                ${this.city ? `<city>${xmlEscape(this.city)}</city>` : ''}
+                ${this.state ? `<state>${xmlEscape(this.state)}</state>` : ''}
+                ${this.country ? `<country>${xmlEscape(this.country)}</country>` : ''}                        
             </label>
         `) as AudioSaladXML;
     }

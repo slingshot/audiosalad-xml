@@ -1,3 +1,4 @@
+import xmlEscape from 'xml-escape';
 import { Participant } from './Participant';
 import { GenreType } from './GenreType';
 import { Text } from './Text';
@@ -198,31 +199,31 @@ export class Track {
     xml(): AudioSaladXML {
         return formatXml(`
             <track>
-                ${this.vendorTrackID ? `<vendor_track_id>${this.vendorTrackID}</vendor_track_id>` : ''}
-                ${this.isrc ? `<isrc>${this.isrc}</isrc>` : ''}
-                ${this.iswc ? `<iswc>${this.iswc}</iswc>` : ''}
+                ${this.vendorTrackID ? `<vendor_track_id>${xmlEscape(this.vendorTrackID)}</vendor_track_id>` : ''}
+                ${this.isrc ? `<isrc>${xmlEscape(this.isrc)}</isrc>` : ''}
+                ${this.iswc ? `<iswc>${xmlEscape(this.iswc)}</iswc>` : ''}
                 ${this.discNumber ? `<disc_number>${this.discNumber}</disc_number>` : ''}
                 ${this.trackNumber ? `<track_number>${this.trackNumber}</track_number>` : ''}
-                <title>${this.title}</title>
-                ${this.titleVersion ? `<title_version>${this.titleVersion}</title_version>` : ''}                
-                ${this.work ? `<work>${this.work}</work>` : ''}                
+                <title>${xmlEscape(this.title)}</title>
+                ${this.titleVersion ? `<title_version>${xmlEscape(this.titleVersion)}</title_version>` : ''}                
+                ${this.work ? `<work>${xmlEscape(this.work)}</work>` : ''}                
                 ${this.trackLength ? `<track_length>${this.trackLength}</track_length>` : ''}                
                 ${this.advisory ? `<advisory>${this.advisory}</advisory>` : ''}                
-                ${this.audioLanguage ? `<audio_language>${this.audioLanguage}</audio_language>` : ''}                
+                ${this.audioLanguage ? `<audio_language>${xmlEscape(this.audioLanguage)}</audio_language>` : ''}                
                 ${this.bpm ? `<bpm>${this.bpm}</bpm>` : ''}                
                 ${this.previewStart ? `<preview_start>${this.previewStart}</preview_start>` : ''}                
                 ${this.previewDuration ? `<preview_duration>${this.previewDuration}</preview_duration>` : ''}
-                <display_artist>${this.displayArtist}</display_artist>                
+                <display_artist>${xmlEscape(this.displayArtist)}</display_artist>                
                 ${this.participants?.map((participant: Participant) => participant.xml()).join('') ?? ''}               
                 ${this.genres?.map((genre: GenreType) => genre.xml()).join('') ?? ''}
-                ${this.tags?.map((tag) => `<tag>${tag}</tag>`).join('') ?? ''}
-                ${this.notes ? `<notes>${this.notes}</notes>` : ''}   
+                ${this.tags?.map((tag) => `<tag>${xmlEscape(tag)}</tag>`).join('') ?? ''}
+                ${this.notes ? `<notes>${xmlEscape(this.notes)}</notes>` : ''}   
                 ${this.texts?.map((text: Text) => text.xml()).join('') ?? ''}
-                ${this.cInfo ? `<c_info>${this.cInfo}</c_info>` : ''}   
+                ${this.cInfo ? `<c_info>${xmlEscape(this.cInfo)}</c_info>` : ''}   
                 ${this.cYear ? `<c_year>${this.cYear}</c_year>` : ''} 
-                ${this.pInfo ? `<p_info>${this.pInfo}</p_info>` : ''}   
+                ${this.pInfo ? `<p_info>${xmlEscape(this.pInfo)}</p_info>` : ''}   
                 ${this.pYear ? `<p_year>${this.pYear}</p_year>` : ''} 
-                ${this.rightsHolders ? `<rights_holders>${this.rightsHolders}</rights_holders>` : ''}
+                ${this.rightsHolders ? `<rights_holders>${xmlEscape(this.rightsHolders)}</rights_holders>` : ''}
                 ${this.priceTiers?.map((tier: PriceTier) => tier.xml()).join('') ?? ''}
                 ${this.permissions?.map((permission: Permission) => permission.xml()).join('') ?? ''}
                 ${this.territories?.map((territory: Territory) => territory.xml()).join('') ?? ''}

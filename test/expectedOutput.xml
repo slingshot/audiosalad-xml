@@ -21,7 +21,7 @@
     </participant>
     <participant>
         <role>Song Writer</role>
-        <name>Finneas O'Connell</name>
+        <name>Finneas O&apos;Connell</name>
         <primary>false</primary>
     </participant>
     <original_release_date>2020-05-02</original_release_date>
@@ -107,20 +107,20 @@
         </participant>
         <participant>
             <role>Song Writer</role>
-            <name>Finneas O'Connell</name>
+            <name>Finneas O&apos;Connell</name>
             <primary>false</primary>
         </participant>
         <text>
             <type>Lyrics</type>
             <language>English</language>
-            <content>As long as I'm here
-                                No one can hurt you
-                                Don't wanna lie here
-                                But you can learn to
-                                If I could change
-                                The way that you see yourself
-                                You wouldn't wonder why you hear
-                                They don't deserve you</content>
+            <content>As long as I&apos;m here
+                No one can hurt you
+                Don&apos;t wanna lie here
+                But you can learn to
+                If I could change
+                The way that you see yourself
+                You wouldn&apos;t wonder why you hear
+                They don&apos;t deserve you</content>
         </text>
         <c_info>Billie Eilish, under exclusive license to Slingshot Records</c_info>
         <c_year>2020</c_year>

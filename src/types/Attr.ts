@@ -1,3 +1,4 @@
+import xmlEscape from 'xml-escape';
 import { AttributeType } from './Attr.enum';
 import { AudioSaladXML } from './AudioSaladXML';
 import { formatXml } from '../formatter';
@@ -37,9 +38,9 @@ export class Attr {
     xml(): AudioSaladXML {
         return formatXml(`
             <attr>
-                ${this.type ? `<type>${this.type}</type>` : ''}
-                <key>${this.key}</key>
-                <value>${this.value}</value>
+                ${this.type ? `<type>${xmlEscape(this.type)}</type>` : ''}
+                <key>${xmlEscape(this.key)}</key>
+                <value>${xmlEscape(this.value)}</value>
             </attr>
         `) as AudioSaladXML;
     }

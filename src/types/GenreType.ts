@@ -1,3 +1,4 @@
+import xmlEscape from 'xml-escape';
 import { Genre, SubGenre } from './Genre.enum';
 import { AudioSaladXML } from './AudioSaladXML';
 import { formatXml } from '../formatter';
@@ -31,8 +32,8 @@ export class GenreType {
     xml(): AudioSaladXML {
         return formatXml(`
             <genre>
-                <primary>${this.primary}</primary>
-                ${this.sub ? `<sub>${this.sub}</sub>` : ''}
+                <primary>${xmlEscape(this.primary)}</primary>
+                ${this.sub ? `<sub>${xmlEscape(this.sub)}</sub>` : ''}
             </genre>
         `) as AudioSaladXML;
     }

@@ -1,3 +1,4 @@
+import xmlEscape from 'xml-escape';
 import { CountryCode } from './Country.enum';
 import { AudioSaladXML } from './AudioSaladXML';
 import { formatXml } from '../formatter';
@@ -32,7 +33,7 @@ export class Permission {
      * A 2-character ISO country code indicating the regions where this applies. Use the
      * CountryCode enum for an easy, validated option; maps to `country_code`
      */
-    countryCode?: Array<CountryCode | string>;
+    countryCode?: Array<CountryCode | string> = [];
 
     /**
      * Constructor for `Permission` objects. Takes all of the attributes as an object.
@@ -49,11 +50,11 @@ export class Permission {
     xml(): AudioSaladXML {
         return formatXml(`
             <permission>
-                <type>${this.type}</type>
+                <type>${xmlEscape(this.type)}</type>
                 <enabled>${this.enabled}</enabled>
-                ${this.startDate ? `<start_date>${this.startDate.toISOString()}</start_date>` : ''}
-                ${this.endDate ? `<end_date>${this.endDate.toISOString()}</end_date>` : ''}
-                ${this.countryCode ? `<country_code>${this.countryCode}</country_code>` : ''}
+                ${this.startDate ? `<start_date>${xmlEscape(this.startDate.toISOString())}</start_date>` : ''}
+                ${this.endDate ? `<end_date>${xmlEscape(this.endDate.toISOString())}</end_date>` : ''}
+                ${this.countryCode ? this.countryCode.map((code) => `<country_code>${xmlEscape(code)}</country_code>`) : ''}
             </permission>
         `) as AudioSaladXML;
     }
