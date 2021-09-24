@@ -44,9 +44,11 @@ export class Release {
     action: Action = Action.Add;
 
     /**
-     * The UPC/EAN barcode for this release; maps to `upc_ean`
+     * The UPC/EAN barcode for this release. Must be provided as a string (to account for
+     * leading zeros and similar number formatting that would be lost as a JS number); maps to
+     * `upc_ean`
      */
-    upc?: number;
+    upc?: string;
 
     /**
      * Proprietary release identifier as used by the vendor. Appears only for information
@@ -319,7 +321,7 @@ export class Release {
             exportID: 'abc123',
             exportTime: new Date('2020-05-02'),
             action: Action.Add,
-            upc: 123456789012,
+            upc: '123456789012',
             vendorReleaseID: 'xyz123',
             catalogID: 'SS-TST-01',
             series: 'Test Collection',
