@@ -42,7 +42,7 @@ export class Territory {
     xml(): AudioSaladXML {
         return formatXml(`
             <territory>
-                 ${this.countryCode.map((code) => `<country_code>${xmlEscape(code)}</country_code>`)}
+                 ${this.countryCode.map((code) => `<country_code>${xmlEscape(code)}</country_code>`).join('')}
                  ${this.releaseDate ? `<release_date>${xmlEscape(this.releaseDate.toISOString())}</release_date>` : ''}
                  ${this.permissions?.forEach((permission: Permission) => permission.xml()) ?? ''}
             </territory>

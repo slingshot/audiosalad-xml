@@ -54,7 +54,7 @@ export class Permission {
                 <enabled>${this.enabled}</enabled>
                 ${this.startDate ? `<start_date>${xmlEscape(this.startDate.toISOString())}</start_date>` : ''}
                 ${this.endDate ? `<end_date>${xmlEscape(this.endDate.toISOString())}</end_date>` : ''}
-                ${this.countryCode ? this.countryCode.map((code) => `<country_code>${xmlEscape(code)}</country_code>`) : ''}
+                ${this.countryCode ? this.countryCode.map((code) => `<country_code>${xmlEscape(code)}</country_code>`).join('') : ''}
             </permission>
         `) as AudioSaladXML;
     }

@@ -37,7 +37,7 @@ export class Delivery {
     xml(): AudioSaladXML {
         return formatXml(`
             <dsp_delivery>
-                 ${this.dsps.map((dsp) => `<dsp>${xmlEscape(dsp)}</dsp>`)}
+                 ${this.dsps.map((dsp) => `<dsp>${xmlEscape(dsp)}</dsp>`).join('')}
                  <action>${this.action}</action>
                  ${this.deliveryDate ? `<delivery_date>${xmlEscape(this.deliveryDate.toISOString())}</delivery_date>` : ''}
             </dsp_delivery>
