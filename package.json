@@ -65,5 +65,7 @@
     },
     "publishConfig": {
         "access": "public"
-    }
+    },
+    "homepage": "https://slingshot.github.io/audiosalad-xml",
+    "repository": "github:slingshot/audiosalad-xml"
 }
