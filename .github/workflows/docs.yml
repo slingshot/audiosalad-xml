@@ -19,7 +19,7 @@ jobs:
     name: Build API docs
     runs-on: namespace-profile-default
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: jdx/mise-action@v2
         with:
           version: 2026.8.16
