@@ -115,6 +115,34 @@ describe('formatPartialDate', () => {
     });
 });
 
+describe('accepts every shape the XSD allows, not a narrower guess', () => {
+    // Found by running AudioSalad's own published sample through the library:
+    // it exports permission/start_date and territory/release_date WITHOUT a
+    // timezone, which xs:dateTime permits and an earlier regex here did not.
+    // Being narrower than the schema means rejecting real documents.
+    test('xs:dateTime may omit the timezone', () => {
+        expect(formatDateTime('2019-07-19T00:00:00')).toBe('2019-07-19T00:00:00');
+        expect(formatDateTime('2019-08-01T00:00:00')).toBe('2019-08-01T00:00:00');
+    });
+
+    test('an unzoned value round-trips unchanged, gaining no invented timezone', () => {
+        expect(formatDateTime('2019-07-19T00:00:00')).not.toContain('Z');
+    });
+
+    test('xs:date may carry a timezone', () => {
+        expect(formatDate('2019-08-01Z')).toBe('2019-08-01Z');
+        expect(formatDate('2019-08-01+02:00')).toBe('2019-08-01+02:00');
+    });
+
+    test('widening did not weaken the real checks', () => {
+        expect(formatDateTime('2019-07-19')).toBeUndefined();
+        expect(formatDateTime('2020-02-30T00:00:00')).toBeUndefined();
+        expect(formatDateTime('2020-01-01T25:00:00')).toBeUndefined();
+        expect(formatDateTime('2020-01-01T00:00:00+99:00')).toBeUndefined();
+        expect(formatDate('2020-02-30')).toBeUndefined();
+    });
+});
+
 describe('UTC behaviour is pinned, not incidental', () => {
     // A `Date` is an instant; a release date is a calendar date. There is no
     // rule that reads both `new Date(2020, 4, 2)` (local midnight) and
