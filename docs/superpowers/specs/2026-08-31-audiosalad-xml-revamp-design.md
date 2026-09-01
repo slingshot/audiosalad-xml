@@ -13,7 +13,7 @@ TypeScript-friendly form. Today it exposes mutable classes whose `.xml()` method
 builds output by string-templating and calls `xml-formatter` on every nested
 node.
 
-That architecture has produced eight defects, all reproduced against the current
+That architecture has produced seven defects, all reproduced against the current
 `main`:
 
 | # | Defect | Effect |
@@ -23,14 +23,20 @@ That architecture has produced eight defects, all reproduced against the current
 | 3 | `Territory.xml()` uses `this.permissions?.forEach(...)` | territory `<permission>` is **never emitted** |
 | 4 | Falsy guards (`this.bpm ? ... : ''`) on numeric fields | a legitimate `0` is dropped — `preview_start: 0` silently vanishes |
 | 5 | `xml-escape` does not handle XML-illegal control characters | emits documents no conformant parser accepts (verified with U+0007) |
-| 6 | `date.toISOString().split('T')[0]` | converts through UTC, shifting local-time dates by up to a day |
-| 7 | `index.ts` re-exports the *type* `AudioSaladXML` as a value | **breaks every modern bundler**; Bun cannot load `src/index.ts` at all |
-| 8 | `test/xml.test.ts` does `await expect(await validateXMLWithXSD(...)).resolves` | accesses a getter and discards it — **no matcher runs; the suite asserts nothing** |
+| 6 | `index.ts` re-exports the *type* `AudioSaladXML` as a value | **breaks every modern bundler**; Bun cannot load `src/index.ts` at all |
+| 7 | `test/xml.test.ts` does `await expect(await validateXMLWithXSD(...)).resolves` | accesses a getter and discards it — **no matcher runs; the suite asserts nothing** |
 
 Defects 1–3 share a root cause worth naming, because it is invisible to the type
 checker: `Array.prototype.forEach` returns `undefined`, and `undefined ?? ''` is
-`''`. The expression types as `string` and reads as deliberate. Defect 8 is why
+`''`. The expression types as `string` and reads as deliberate. Defect 7 is why
 none of this was caught.
+
+**Not a defect, but a sharp edge.** `date.toISOString().split('T')[0]` reads a
+`Date` in UTC. That is surprising for a *calendar* date — in `America/Los_Angeles`
+a `Date` built from local May 2nd serializes as May 3rd. It is nonetheless the
+behaviour every 0.1.x caller already has, and no formatting rule fixes both
+`new Date(2020, 4, 2)` (local midnight) and `new Date('2020-05-02')` (UTC
+midnight). §3.3 keeps UTC, documents it, and steers callers to strings.
 
 ### 1.1 Specification delta, v3.2 → v3.4
 
@@ -203,14 +209,24 @@ a behaviour change from 0.1.x and is called out in the migration guide.
 
 ### 3.3 Dates and times
 
-The current `.toISOString().split('T')[0]` converts through UTC: a `Date`
-constructed from a local-time string can serialize as the previous or next day.
-The replacement is explicit rather than accidental.
+`Date` is an instant; `release_date` is a calendar date. The two cannot be
+reconciled by a formatting rule, because `new Date(2020, 4, 2)` is local
+midnight and `new Date('2020-05-02')` is UTC midnight — any single rule reads
+one of them off by a day.
 
-Every date-ish field accepts `Date | string`.
+The design therefore keeps 0.1.x's behaviour rather than trading one silent
+off-by-one for another, and makes it explicit:
 
-- A `Date` is **always formatted in UTC**, documented on every field.
-- A `string` passes through, validated against the target lexical form.
+- A `Date` is **always formatted in UTC**, documented on every date field.
+- A `string` passes through, validated against the target lexical form. **This
+  is the recommended form for calendar dates** — it is unambiguous in every
+  timezone.
+
+A test pins the UTC behaviour under `TZ=UTC`, `TZ=America/Los_Angeles`, and
+`TZ=Asia/Tokyo`, so the choice is locked down rather than incidental.
+
+String inputs are validated component-wise, not merely by shape: a regex alone
+accepts `2020-99-99T25:61:61`, which is not a legal `xs:dateTime`.
 
 | Kind | Lexical form | Fields |
 |---|---|---|
@@ -231,11 +247,22 @@ processing instructions, the five predefined entities, and numeric character
 references. Namespace prefixes are stripped — AudioSalad uses a single default
 namespace.
 
-`parseRelease(xml)` then drives `parseNode` over the v3.4 tables. Malformed XML
-throws a `SyntaxError`. Elements the v3.4 tables do not know about throw an
-`AudioSaladValidationError` with `unknownElement` issues, so a document from a
-future schema version fails loudly rather than round-tripping lossily;
-`{ onUnknownElement: 'ignore' }` opts into discarding them.
+`parseRelease(xml)` then drives `parseNode` over the v3.4 tables.
+
+**Parsing validates.** A parser that accepts anything and returns a value typed
+`ReleaseInput` is a lie: a v3.2 document, a wrong `schema_id`, a duplicated
+`<title>`, or `<track_number>abc</track_number>` would all "succeed". So
+`parseNode` checks, while consuming children, that the document matches the
+table — element order, cardinality, required fields, scalar lexical forms — and
+`parseRelease` additionally verifies the root element name, its namespace, and
+the `schema_id` fixed value.
+
+- Malformed XML throws `SyntaxError`.
+- A document that is well-formed but not v3.4 throws `AudioSaladValidationError`.
+- `{ onUnknownElement: 'ignore' }` opts into discarding unknown elements only.
+
+Re-running `validateRelease` on the parsed output is *not* sufficient, because
+duplicates, ordering, and the original fixed values are already lost by then.
 
 **Round-trip property.** `Date` inputs necessarily become strings after a
 round-trip, so the invariant under test is not `parse(build(x)) === x` but:
@@ -301,6 +328,11 @@ Retained: `Release`, `Track`, `Participant`, `Asset`, `Attr`, `Permission`,
 
 `ProprietaryID` gains the `constructor(partial)` it was missing — it was
 previously impossible to construct with values.
+
+The 0.1.x classes initialized several fields (`Release.action`,
+`Track.trackNumber`, `Participant.role`/`primary`, `Permission.enabled`,
+`Territory.countryCode`, `PriceTier.type`/`name`). **Those defaults are
+preserved**, so partial constructions that were valid before remain valid.
 
 ### 4.2 Breaking changes
 

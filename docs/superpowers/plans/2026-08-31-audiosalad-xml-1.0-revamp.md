@@ -32,9 +32,11 @@ finalized, so an implementer is not the first person to run it:
 | `xmllint-wasm` 5.3.0 under `bun test` | Works. `errors` interleaves libxml warnings and caret context lines, so the helper filters on `/Schemas validity error/`. |
 | A v3.4-shaped document against the real v3.4 XSD | Validates — including a 14-digit `upc_ean`, `dj mix`, an asset with no `md5_checksum`, `preview_start` of 0, and a `permission` with two `type` elements plus `attr`. `dsp_delivery` is correctly *rejected*, confirming its removal. |
 | `src/core/parse.ts` against its 16 tests plus 16 adversarial inputs | Passed after three defects were found and fixed. See the note in Task 4. |
-| `src/core/descriptor.ts`, `serialize.ts`, `datetime.ts` against their tests | 56/56 pass. |
+| `src/core/descriptor.ts`, `serialize.ts`, `datetime.ts`, `parse.ts` against every test in this plan | 96/96 pass, re-extracted from this document after the review revisions and run under `TZ=UTC`, `America/Los_Angeles`, and `Asia/Tokyo`. |
+| A second-opinion review (Codex, gpt-5.6-sol, high effort) | 14 findings; all confirmed and folded in. It independently verified every descriptor table in Tasks 7–9 against the XSD sequence, cardinality, and facets, and found no missing or misordered element. |
 | All core modules under the strict `tsconfig.json` in Task 1 | `tsc --noEmit` clean, including `noUncheckedIndexedAccess` and `verbatimModuleSyntax`. |
-| The `facade()` class factory and `class Release extends ReleaseBase` | Runtime and `tsc` both clean; `InstanceType<typeof Attr> & AttrInput` gives callers typed field access. |
+| `toISOString().split('T')[0]` vs. UTC getters, under three timezones | **Identical output.** This is why the date "defect" was removed from the list above. |
+| The `facade()` class factory and `class Release extends ReleaseBase` | **A first attempt was wrong.** Returning the class expression directly types instances as `Facade`, so `new Track(...).title` is an error and `Track` is not assignable to `TrackInput`. The corrected factory casts to an explicit `FacadeClass<I>` construct signature and carries per-class defaults; that version is `tsc`-clean and runtime-verified. See Task 11. |
 
 ## Defect index (referenced by task)
 
@@ -45,9 +47,15 @@ finalized, so an implementer is not the first person to run it:
 | 3 | `Territory.permissions` never emitted (`forEach`) | Task 8 |
 | 4 | Falsy guard drops legitimate `0` | Task 5 |
 | 5 | XML-illegal control chars emitted unescaped | Task 2 |
-| 6 | `toISOString().split('T')[0]` shifts local dates | Task 3 |
-| 7 | `export { AudioSaladXML }` (a type) breaks bundlers | Task 1 |
-| 8 | Test suite asserts nothing | Task 1 |
+| 6 | `export { AudioSaladXML }` (a type) breaks bundlers | Task 1 |
+| 7 | Test suite asserts nothing | Task 1 |
+
+**Not a defect.** An earlier draft listed `toISOString().split('T')[0]` as a
+date-shifting bug. It is not: reading a `Date` in UTC is surprising for a
+calendar date, but the replacement produces **byte-identical output in every
+timezone**, verified under `TZ=UTC`, `America/Los_Angeles`, and `Asia/Tokyo`.
+Task 3 keeps UTC, documents it, and pins it with a timezone test — it does not
+claim a fix.
 
 ---
 
@@ -75,7 +83,7 @@ finalized, so an implementer is not the first person to run it:
 
 ## Task 1: Toolchain bootstrap
 
-Nothing in this repo can currently be run by a modern tool: `src/index.ts` fails to load under Bun (defect 7), and the test suite asserts nothing (defect 8). This task makes `bun test` meaningful before any logic changes.
+Nothing in this repo can currently be run by a modern tool: `src/index.ts` fails to load under Bun (defect 6), and the test suite asserts nothing (defect 7). This task makes `bun test` meaningful before any logic changes.
 
 **Files:**
 - Create: `tsdown.config.ts`, `biome.json`, `.editorconfig`, `test/smoke.test.ts`
@@ -116,10 +124,14 @@ api-docs/
 
 - [ ] **Step 2: Replace `package.json`**
 
+> **Leave `version` at `0.1.5`.** The 1.0.0 bump is applied by
+> `changeset version` in Task 17. Setting it to `1.0.0` here would make the
+> major changeset produce **2.0.0**.
+
 ```json
 {
   "name": "@ssh/audiosalad-xml",
-  "version": "1.0.0",
+  "version": "0.1.5",
   "description": "Build, validate, and parse AudioSalad release XML (spec v3.4) from TypeScript.",
   "license": "MIT",
   "author": "Sanil Chawla",
@@ -135,9 +147,8 @@ api-docs/
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "import": { "types": "./dist/index.d.ts", "default": "./dist/index.js" },
+      "require": { "types": "./dist/index.d.cts", "default": "./dist/index.cjs" }
     },
     "./package.json": "./package.json"
   },
@@ -178,6 +189,10 @@ api-docs/
 }
 ```
 
+> Type resolution is format-specific: a CJS consumer must reach `index.d.cts`,
+> not the ESM `index.d.ts`. Routing both through one declaration file is what
+> `are-the-types-wrong` flags as a masquerading package.
+>
 > `release` runs plain `npm publish` — `publishConfig.provenance` supplies the attestation flag, and npm's CLI is what implements provenance. Bun remains the package manager.
 
 - [ ] **Step 3: Replace `tsconfig.json`**
@@ -276,7 +291,7 @@ indent_size = 2
 trim_trailing_whitespace = false
 ```
 
-- [ ] **Step 7: Write the failing smoke test (covers defect 7 and defect 8)**
+- [ ] **Step 7: Write the failing smoke test (covers defect 6 and defect 7)**
 
 `test/smoke.test.ts`:
 
@@ -665,11 +680,15 @@ describe('formatDate', () => {
         expect(formatDate(new Date(Date.UTC(2020, 4, 2)))).toBe('2020-05-02');
     });
 
-    // Defect 6: `toISOString().split('T')[0]` on a Date built from a
-    // local-time string converts through UTC and can shift the day.
-    test('is explicit about UTC for a late local time', () => {
-        const d = new Date(Date.UTC(2020, 4, 2, 23, 30));
-        expect(formatDate(d)).toBe('2020-05-02');
+    test('reads the UTC fields, not the local ones', () => {
+        // 23:30 UTC is still May 2 in UTC, whatever the host timezone is.
+        expect(formatDate(new Date(Date.UTC(2020, 4, 2, 23, 30)))).toBe('2020-05-02');
+    });
+
+    test('rejects an impossible calendar date', () => {
+        expect(formatDate('2020-02-30')).toBeUndefined();
+        expect(formatDate('2020-13-01')).toBeUndefined();
+        expect(formatDate('2016-02-29')).toBe('2016-02-29');
     });
 
     test('passes through a valid YYYY-MM-DD string', () => {
@@ -703,6 +722,19 @@ describe('formatDateTime', () => {
 
     test('rejects a bare date string', () => {
         expect(formatDateTime('2017-01-01')).toBeUndefined();
+    });
+
+    test('rejects impossible components that pass a shape-only regex', () => {
+        expect(formatDateTime('2020-99-99T25:61:61Z')).toBeUndefined();
+        expect(formatDateTime('2020-02-30T00:00:00Z')).toBeUndefined();
+        expect(formatDateTime('2020-01-01T00:00:00+99:00')).toBeUndefined();
+    });
+
+    test('accepts the legal edge cases', () => {
+        // xs:dateTime permits 24:00:00 and a :60 leap second; offsets reach 14:00.
+        expect(formatDateTime('2020-01-01T24:00:00Z')).toBe('2020-01-01T24:00:00Z');
+        expect(formatDateTime('2020-01-01T00:00:60Z')).toBe('2020-01-01T00:00:60Z');
+        expect(formatDateTime('2020-01-01T00:00:00+14:00')).toBe('2020-01-01T00:00:00+14:00');
     });
 });
 
@@ -744,6 +776,24 @@ describe('formatPartialDate', () => {
     test('rejects a malformed value', () => {
         expect(formatPartialDate('May 2020')).toBeUndefined();
     });
+
+    test('rejects an impossible month', () => {
+        expect(formatPartialDate('2020-99')).toBeUndefined();
+        expect(formatPartialDate('2020-00')).toBeUndefined();
+        expect(formatPartialDate('2020-13')).toBeUndefined();
+    });
+});
+
+describe('UTC behaviour is pinned, not incidental', () => {
+    // A `Date` is an instant; a release date is a calendar date. There is no
+    // rule that reads both `new Date(2020, 4, 2)` (local midnight) and
+    // `new Date('2020-05-02')` (UTC midnight) as May 2. We keep 0.1.x's UTC
+    // behaviour and document it; this test stops it drifting.
+    // Run under: TZ=UTC, TZ=America/Los_Angeles, TZ=Asia/Tokyo
+    test('a UTC instant formats identically in any host timezone', () => {
+        expect(formatDate(new Date('2020-05-02T00:00:00Z'))).toBe('2020-05-02');
+        expect(formatDateTime(new Date('2020-05-02T21:00:00Z'))).toBe('2020-05-02T21:00:00Z');
+    });
 });
 ```
 
@@ -757,44 +807,65 @@ Expected: FAIL — module not found.
 
 - [ ] **Step 3: Implement `src/core/datetime.ts`**
 
+> String inputs are validated **component-wise**, not by shape alone. A regex
+> that only checks the digit layout accepts `2020-99-99T25:61:61+99:99`, which
+> is not a legal `xs:dateTime` and which `xmllint` would reject downstream.
+> Note the legal edge cases that must still pass: `24:00:00` and a `:60` leap
+> second are both valid `xs:dateTime`, and offsets run to ±14:00.
+
 ```ts
-/** Any value accepted where the schema wants a date or dateTime. */
 export type DateLike = Date | string;
 
-const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
-const YEAR_MONTH_RE = /^\d{4}-\d{2}$/;
+const DATE_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
+const YEAR_MONTH_RE = /^(\d{4})-(\d{2})$/;
 const YEAR_RE = /^\d{4}$/;
-const DATETIME_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/;
+const DATETIME_RE =
+    /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d+)?(Z|[+-]\d{2}:\d{2})$/;
 
 const isValidDate = (d: Date): boolean => !Number.isNaN(d.getTime());
-
 const pad = (n: number, width = 2): string => String(n).padStart(width, '0');
 
-/** True when the calendar fields in a YYYY-MM-DD string denote a real day. */
-const isRealDate = (s: string): boolean => {
-    const [y, m, d] = s.split('-').map(Number) as [number, number, number];
+/** True when y-m-d denotes a real calendar day (rejects 2020-02-30, 2020-13-01). */
+const isRealYmd = (y: number, m: number, d: number): boolean => {
+    if (m < 1 || m > 12 || d < 1) return false;
     const probe = new Date(Date.UTC(y, m - 1, d));
-    return (
-        probe.getUTCFullYear() === y && probe.getUTCMonth() === m - 1 && probe.getUTCDate() === d
-    );
+    return probe.getUTCFullYear() === y && probe.getUTCMonth() === m - 1 && probe.getUTCDate() === d;
 };
 
-/** `xs:date` — always rendered from the Date's **UTC** fields. */
+const isRealTime = (h: number, min: number, sec: number): boolean =>
+    h >= 0 && h <= 24 && min >= 0 && min <= 59 && sec >= 0 && sec <= 60;
+
+const isRealOffset = (off: string): boolean => {
+    if (off === 'Z') return true;
+    const h = Number(off.slice(1, 3));
+    const m = Number(off.slice(4, 6));
+    return h <= 14 && m <= 59 && !(h === 14 && m > 0);
+};
+
+/** `xs:date` — a `Date` is read in **UTC**; a string is validated component-wise. */
 export const formatDate = (v: DateLike): string | undefined => {
     if (typeof v === 'string') {
-        return DATE_RE.test(v) && isRealDate(v) ? v : undefined;
+        const m = DATE_RE.exec(v);
+        if (!m) return undefined;
+        return isRealYmd(Number(m[1]), Number(m[2]), Number(m[3])) ? v : undefined;
     }
     if (!isValidDate(v)) return undefined;
-    return `${v.getUTCFullYear()}-${pad(v.getUTCMonth() + 1)}-${pad(v.getUTCDate())}`;
+    return `${pad(v.getUTCFullYear(), 4)}-${pad(v.getUTCMonth() + 1)}-${pad(v.getUTCDate())}`;
 };
 
 /** `xs:dateTime` — UTC, no fractional seconds, matching AudioSalad's examples. */
 export const formatDateTime = (v: DateLike): string | undefined => {
     if (typeof v === 'string') {
-        return DATETIME_RE.test(v) ? v : undefined;
+        const m = DATETIME_RE.exec(v);
+        if (!m) return undefined;
+        const ok =
+            isRealYmd(Number(m[1]), Number(m[2]), Number(m[3])) &&
+            isRealTime(Number(m[4]), Number(m[5]), Number(m[6])) &&
+            isRealOffset(m[7] as string);
+        return ok ? v : undefined;
     }
     if (!isValidDate(v)) return undefined;
-    const date = `${v.getUTCFullYear()}-${pad(v.getUTCMonth() + 1)}-${pad(v.getUTCDate())}`;
+    const date = `${pad(v.getUTCFullYear(), 4)}-${pad(v.getUTCMonth() + 1)}-${pad(v.getUTCDate())}`;
     const time = `${pad(v.getUTCHours())}:${pad(v.getUTCMinutes())}:${pad(v.getUTCSeconds())}`;
     return `${date}T${time}Z`;
 };
@@ -804,18 +875,22 @@ export const formatGYear = (v: DateLike | number): string | undefined => {
     if (typeof v === 'number') {
         return Number.isInteger(v) && v >= 1000 && v <= 9999 ? String(v) : undefined;
     }
-    if (typeof v === 'string') {
-        return YEAR_RE.test(v) ? v : undefined;
-    }
+    if (typeof v === 'string') return YEAR_RE.test(v) ? v : undefined;
     if (!isValidDate(v)) return undefined;
-    return String(v.getUTCFullYear());
+    const y = v.getUTCFullYear();
+    return y >= 1000 && y <= 9999 ? String(y) : undefined;
 };
 
 /** `partial_date` — the union of `xs:date`, `xs:gYearMonth`, and `xs:gYear`. */
 export const formatPartialDate = (v: DateLike): string | undefined => {
     if (typeof v === 'string') {
-        if (YEAR_RE.test(v) || YEAR_MONTH_RE.test(v)) return v;
-        return DATE_RE.test(v) && isRealDate(v) ? v : undefined;
+        if (YEAR_RE.test(v)) return v;
+        const ym = YEAR_MONTH_RE.exec(v);
+        if (ym) {
+            const month = Number(ym[2]);
+            return month >= 1 && month <= 12 ? v : undefined;
+        }
+        return formatDate(v);
     }
     return formatDate(v);
 };
@@ -825,9 +900,10 @@ export const formatPartialDate = (v: DateLike): string | undefined => {
 
 ```bash
 bun test test/core/datetime.test.ts
+for tz in UTC America/Los_Angeles Asia/Tokyo; do TZ=$tz bun test test/core/datetime.test.ts; done
 ```
 
-Expected: PASS, 17 tests.
+Expected: PASS in all three timezones, 23 tests each.
 
 - [ ] **Step 5: Commit**
 
@@ -835,8 +911,9 @@ Expected: PASS, 17 tests.
 git add src/core/datetime.ts test/core/datetime.test.ts
 git commit -m "feat(core): add UTC-explicit date and time formatters
 
-Replaces toISOString().split('T')[0], which converted through UTC
-implicitly and could shift a local-time date by a day."
+Keeps 0.1.x's UTC reading of Date values, now documented and pinned by a
+timezone test rather than incidental, and validates string inputs
+component-wise so 2020-99-99T25:61:61 is rejected."
 ```
 
 ---
@@ -1308,9 +1385,54 @@ describe('buildNode', () => {
         expect(issues[0]).toMatchObject({ code: 'required' });
     });
 
-    test('reports too many occurrences of a bounded field', () => {
-        const { issues } = build({ name: 'x', code: 'AB' });
-        expect(issues).toHaveLength(0);
+    test('reports too many occurrences of a bounded repeated field', () => {
+        const BOUNDED: ComplexType<{ kids?: ChildInput[] }> = {
+            name: 'bounded_type',
+            fields: [{ el: 'kid', key: 'kids', kind: 'complex', type: CHILD, min: 0, max: 2 }],
+        };
+        const issues: Issue[] = [];
+        buildNode(BOUNDED, { kids: [{ id: '1' }, { id: '2' }, { id: '3' }] }, 'b', {
+            path: '',
+            issues,
+            onIllegalChars: 'error',
+        });
+        expect(issues[0]).toMatchObject({ path: 'kids', code: 'cardinality' });
+    });
+});
+
+describe('buildNode type guards', () => {
+    test('does not coerce a number into a string field', () => {
+        expect(build({ name: 123 as unknown as string }).issues[0]).toMatchObject({
+            path: 'name',
+            code: 'type',
+        });
+    });
+
+    test('enforces the xs:unsignedInt 32-bit maximum', () => {
+        expect(build({ name: 'x', count: 4_294_967_296 }).issues[0]).toMatchObject({ code: 'type' });
+        expect(build({ name: 'x', count: 4_294_967_295 }).issues).toEqual([]);
+    });
+
+    test('reports a bad date rather than throwing inside a formatter', () => {
+        expect(() => build({ name: 'x', when: 12345 as unknown as Date })).not.toThrow();
+        expect(build({ name: 'x', when: 12345 as unknown as Date }).issues[0]).toMatchObject({
+            path: 'when',
+            code: 'type',
+        });
+    });
+
+    test('requires an array for a repeated field', () => {
+        // The 0.1.x `Permission.type: 'stream'` shape must surface, not be wrapped.
+        expect(build({ name: 'x', tags: 'one' as unknown as string[] }).issues[0]).toMatchObject({
+            path: 'tags',
+            code: 'cardinality',
+        });
+    });
+
+    test('reports null inside a complex array rather than crashing', () => {
+        const input = { name: 'x', kids: [null] as unknown as ChildInput[] };
+        expect(() => build(input)).not.toThrow();
+        expect(build(input).issues[0]).toMatchObject({ path: 'kids[0]', code: 'type' });
     });
 });
 
@@ -1364,12 +1486,62 @@ describe('parseNode', () => {
 
     test('ignores an unknown element when asked', () => {
         const issues: Issue[] = [];
-        parseNode(TOY, parseXml('<toy><name>x</name><mystery>1</mystery></toy>'), {
+        parseNode(
+            TOY,
+            parseXml('<toy><schema_id>toy_v1</schema_id><name>x</name><mystery>1</mystery></toy>'),
+            { path: '', issues, onUnknownElement: 'ignore' },
+        );
+        expect(issues).toHaveLength(0);
+    });
+});
+
+describe('parseNode validates while it consumes', () => {
+    const parse = (xml: string) => {
+        const issues: Issue[] = [];
+        const value = parseNode(TOY, parseXml(xml), {
             path: '',
             issues,
-            onUnknownElement: 'ignore',
+            onUnknownElement: 'error',
         });
-        expect(issues).toHaveLength(0);
+        return { value, issues };
+    };
+
+    test('reports a missing required element', () => {
+        expect(parse('<toy><schema_id>toy_v1</schema_id></toy>').issues).toContainEqual(
+            expect.objectContaining({ path: 'name', code: 'required' }),
+        );
+    });
+
+    test('reports a wrong fixed value', () => {
+        // This is what rejects a v3.2 document.
+        expect(parse('<toy><schema_id>toy_v0</schema_id><name>x</name></toy>').issues[0]).toMatchObject({
+            code: 'enum',
+        });
+    });
+
+    test('reports a duplicated singleton', () => {
+        expect(
+            parse('<toy><schema_id>toy_v1</schema_id><name>a</name><name>b</name></toy>').issues[0],
+        ).toMatchObject({ path: 'name', code: 'cardinality' });
+    });
+
+    test('reports children out of sequence order', () => {
+        expect(
+            parse('<toy><name>x</name><schema_id>toy_v1</schema_id></toy>').issues.map((i) => i.code),
+        ).toContain('cardinality');
+    });
+
+    test('reports a non-numeric value in an integer element', () => {
+        expect(
+            parse('<toy><schema_id>toy_v1</schema_id><name>x</name><count>abc</count></toy>')
+                .issues[0],
+        ).toMatchObject({ path: 'count', code: 'type' });
+    });
+
+    test('a well-formed, in-order document yields no issues', () => {
+        expect(
+            parse('<toy><schema_id>toy_v1</schema_id><name>x</name><count>5</count></toy>').issues,
+        ).toEqual([]);
     });
 });
 ```
@@ -1383,6 +1555,19 @@ bun test test/core/descriptor.test.ts
 Expected: FAIL — module not found.
 
 - [ ] **Step 3: Implement `src/core/descriptor.ts`**
+
+> Three rules make `validateRelease`'s "never throws" contract real. Values are
+> **never coerced** (`String(raw)` would accept `title: 123`); every
+> unexpected type becomes an `Issue` rather than reaching a formatter that
+> would throw (a numeric date hitting `.getTime()`); and a repeated field
+> **requires an array** rather than wrapping a scalar — which is what surfaces
+> the 0.1.x `Permission.type: 'stream'` shape as a clear error instead of
+> silently accepting it.
+>
+> `parseNode` validates **while consuming children**, not afterwards. Order,
+> duplicates, and fixed values cannot be recovered from the parsed object, so
+> re-running `buildNode` on the result would not catch a v3.2 document, a
+> duplicated `<title>`, or `<track_number>abc</track_number>`.
 
 ```ts
 import {
@@ -1457,6 +1642,19 @@ const ILLEGAL_GLOBAL =
 
 const join = (base: string, key: string): string => (base === '' ? key : `${base}.${key}`);
 
+/** `xs:unsignedInt` is a 32-bit unsigned value. */
+const UNSIGNED_INT_MAX = 4_294_967_295;
+
+const isDateLike = (v: unknown): v is DateLike => v instanceof Date || typeof v === 'string';
+
+/** A short, safe rendering of an unexpected value for an issue message. */
+const describe = (v: unknown): string => {
+    if (v === null) return 'null';
+    if (Array.isArray(v)) return 'an array';
+    if (v instanceof Date) return 'a Date';
+    return typeof v;
+};
+
 /** Formats one scalar value, pushing an issue and returning undefined on failure. */
 const formatScalar = <I>(
     f: FieldDescriptor<I>,
@@ -1466,37 +1664,48 @@ const formatScalar = <I>(
 ): string | undefined => {
     let out: string | undefined;
 
+    const wrongType = (expected: string): undefined => {
+        ctx.issues.push(issue(path, 'type', `expected ${expected}, got ${describe(raw)}`));
+        return undefined;
+    };
+
     switch (f.kind) {
         case 'string':
-            out = typeof raw === 'string' ? raw : String(raw);
+            // No String(raw) coercion: `title: 123` is a mistake, not a string.
+            if (typeof raw !== 'string') return wrongType('a string');
+            out = raw;
             break;
         case 'unsignedInt':
-            if (typeof raw !== 'number' || !Number.isInteger(raw) || raw < 0) {
+            if (typeof raw !== 'number' || !Number.isInteger(raw)) return wrongType('an integer');
+            if (raw < 0 || raw > UNSIGNED_INT_MAX) {
                 ctx.issues.push(
-                    issue(path, 'type', `expected a non-negative integer, got ${String(raw)}`),
+                    issue(path, 'type', `must be between 0 and ${UNSIGNED_INT_MAX}, got ${raw}`),
                 );
                 return undefined;
             }
             out = String(raw);
             break;
         case 'boolean':
-            if (typeof raw !== 'boolean') {
-                ctx.issues.push(issue(path, 'type', `expected a boolean, got ${String(raw)}`));
-                return undefined;
-            }
+            if (typeof raw !== 'boolean') return wrongType('a boolean');
             out = raw ? 'true' : 'false';
             break;
         case 'date':
-            out = formatDate(raw as DateLike);
+            if (!isDateLike(raw)) return wrongType('a Date or string');
+            out = formatDate(raw);
             break;
         case 'dateTime':
-            out = formatDateTime(raw as DateLike);
+            if (!isDateLike(raw)) return wrongType('a Date or string');
+            out = formatDateTime(raw);
             break;
         case 'gYear':
-            out = formatGYear(raw as DateLike | number);
+            if (!isDateLike(raw) && typeof raw !== 'number') {
+                return wrongType('a Date, string, or number');
+            }
+            out = formatGYear(raw);
             break;
         case 'partialDate':
-            out = formatPartialDate(raw as DateLike);
+            if (!isDateLike(raw)) return wrongType('a Date or string');
+            out = formatPartialDate(raw);
             break;
         case 'complex':
             return undefined;
@@ -1571,7 +1780,16 @@ export const buildNode = <I>(
             continue;
         }
 
-        const values = repeated ? (Array.isArray(raw) ? raw : [raw]) : [raw];
+        if (repeated && !Array.isArray(raw)) {
+            // Catches the 0.1.x shape `Permission.type: 'stream'`, which must
+            // now be `['stream']`. Silently wrapping it would hide the break.
+            ctx.issues.push(
+                issue(fieldPath, 'cardinality', `${f.el} expects an array, got ${describe(raw)}`),
+            );
+            continue;
+        }
+
+        const values = repeated ? (raw as unknown[]) : [raw];
 
         if (repeated && f.min === 1 && values.length === 0) {
             ctx.issues.push(issue(fieldPath, 'required', `at least one ${f.el} is required`));
@@ -1593,6 +1811,12 @@ export const buildNode = <I>(
             if (f.kind === 'complex') {
                 const sub = f.type;
                 if (!sub) throw new Error(`descriptor ${type.name}.${f.el} lacks a complex type`);
+                if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+                    ctx.issues.push(
+                        issue(path, 'type', `expected an object, got ${describe(value)}`),
+                    );
+                    return;
+                }
                 children.push(buildNode(sub, value, f.el, { ...ctx, path }));
                 return;
             }
@@ -1604,26 +1828,55 @@ export const buildNode = <I>(
     return el(elName, children);
 };
 
-const parseScalar = <I>(f: FieldDescriptor<I>, text: string): unknown => {
+/** Reverses the scalar formatting done by `buildNode`, reporting lexical errors. */
+const parseScalar = <I>(
+    f: FieldDescriptor<I>,
+    text: string,
+    path: string,
+    ctx: ParseCtx,
+): unknown => {
     switch (f.kind) {
-        case 'unsignedInt':
+        case 'unsignedInt': {
+            if (!/^\d+$/.test(text)) {
+                ctx.issues.push(issue(path, 'type', `<${f.el}> must be an integer, got "${text}"`));
+                return undefined;
+            }
             return Number(text);
-        case 'boolean':
+        }
+        case 'boolean': {
+            if (!['true', 'false', '1', '0'].includes(text)) {
+                ctx.issues.push(issue(path, 'type', `<${f.el}> must be a boolean, got "${text}"`));
+                return undefined;
+            }
             return text === 'true' || text === '1';
+        }
+        case 'gYear':
+            return /^\d{4}$/.test(text) ? Number(text) : text;
         default:
             return text;
     }
 };
 
-/** Inverts `buildNode`: an element tree back into an input object. */
+/**
+ * Inverts `buildNode`, and validates while it does so.
+ *
+ * A parser that accepts anything and returns a value typed `ReleaseInput` is a
+ * lie: a v3.2 document, a duplicated `<title>`, or out-of-order children would
+ * all "succeed". Re-running `buildNode` on the result cannot recover those —
+ * duplicates, ordering, and fixed values are already lost. So the checks happen
+ * here, while the children are being consumed.
+ */
 export const parseNode = <I>(type: ComplexType<I>, node: XmlElement, ctx: ParseCtx): I => {
     const out: Record<string, unknown> = {};
-    const byElement = new Map<string, FieldDescriptor<I>>();
-    for (const f of type.fields) byElement.set(f.el, f);
+    const counts = new Map<string, number>();
+    const indexOfField = new Map<string, number>();
+    type.fields.forEach((f, i) => indexOfField.set(f.el, i));
+
+    let cursor = 0;
 
     for (const child of node.children) {
-        const f = byElement.get(child.name);
-        if (!f) {
+        const fieldIndex = indexOfField.get(child.name);
+        if (fieldIndex === undefined) {
             if (ctx.onUnknownElement === 'error') {
                 ctx.issues.push(
                     issue(
@@ -1635,22 +1888,59 @@ export const parseNode = <I>(type: ComplexType<I>, node: XmlElement, ctx: ParseC
             }
             continue;
         }
-        if (f.const !== undefined || f.key === undefined) continue;
+        const f = type.fields[fieldIndex] as FieldDescriptor<I>;
+
+        if (fieldIndex < cursor) {
+            ctx.issues.push(
+                issue(
+                    join(ctx.path, f.key ?? f.el),
+                    'cardinality',
+                    `<${child.name}> is out of sequence order in ${type.name}`,
+                ),
+            );
+        } else {
+            cursor = fieldIndex;
+        }
+
+        const seen = (counts.get(f.el) ?? 0) + 1;
+        counts.set(f.el, seen);
+        if (seen > f.max) {
+            ctx.issues.push(
+                issue(
+                    join(ctx.path, f.key ?? f.el),
+                    'cardinality',
+                    `at most ${f.max} <${f.el}> element(s) allowed, found ${seen}`,
+                ),
+            );
+            continue;
+        }
+
+        if (f.const !== undefined) {
+            if ((child.text ?? '') !== f.const) {
+                ctx.issues.push(
+                    issue(
+                        join(ctx.path, f.el),
+                        'enum',
+                        `<${f.el}> must be "${f.const}", got "${child.text ?? ''}"`,
+                    ),
+                );
+            }
+            continue;
+        }
+        if (f.key === undefined) continue;
 
         const repeated = f.max > 1;
         const fieldPath = join(ctx.path, f.key);
+        const path = repeated ? `${fieldPath}[${seen - 1}]` : fieldPath;
 
         let value: unknown;
         if (f.kind === 'complex') {
             const sub = f.type;
             if (!sub) throw new Error(`descriptor ${type.name}.${f.el} lacks a complex type`);
-            const index = repeated ? ((out[f.key] as unknown[] | undefined)?.length ?? 0) : 0;
-            value = parseNode(sub, child, {
-                ...ctx,
-                path: repeated ? `${fieldPath}[${index}]` : fieldPath,
-            });
+            value = parseNode(sub, child, { ...ctx, path });
         } else {
-            value = parseScalar(f, child.text ?? '');
+            value = parseScalar(f, child.text ?? '', path, ctx);
+            if (value === undefined) continue;
         }
 
         if (repeated) {
@@ -1659,6 +1949,18 @@ export const parseNode = <I>(type: ComplexType<I>, node: XmlElement, ctx: ParseC
             out[f.key] = list;
         } else {
             out[f.key] = value;
+        }
+    }
+
+    for (const f of type.fields) {
+        if (f.min === 1 && (counts.get(f.el) ?? 0) === 0) {
+            ctx.issues.push(
+                issue(
+                    join(ctx.path, f.key ?? f.el),
+                    'required',
+                    `<${f.el}> is required by ${type.name}`,
+                ),
+            );
         }
     }
 
@@ -1672,7 +1974,7 @@ export const parseNode = <I>(type: ComplexType<I>, node: XmlElement, ctx: ParseC
 bun test test/core/descriptor.test.ts
 ```
 
-Expected: PASS, 25 tests.
+Expected: PASS, 36 tests.
 
 - [ ] **Step 5: Update the spec to match the two-function kernel**
 
@@ -3289,7 +3591,108 @@ bun test test/spec/
 
 Expected: PASS — the ordering tests confirm all 30 track fields and all 40 release fields sit in XSD sequence order.
 
-- [ ] **Step 8: Commit**
+- [ ] **Step 8: Add the descriptor/interface shape-agreement test**
+
+The design's drift mitigation: a field added to a table but not its interface
+(or vice versa) must fail, since the two are maintained by hand.
+
+`test/spec/shape-agreement.test.ts`:
+
+```ts
+import { describe, expect, test } from 'bun:test';
+import type { ComplexType } from '../../src/core/descriptor';
+import {
+    ASSET, ATTR, GENRE, LABEL, PARTICIPANT, PERMISSION, PRICE_TIER,
+    PROPRIETARY_ID, RELEASE, TERRITORY, TEXT, TRACK,
+} from '../../src/spec/v3_4';
+
+/**
+ * The input keys each table reads. Kept as a literal list rather than derived,
+ * so that adding a descriptor without updating the model — or the reverse —
+ * shows up here as a diff a reviewer must approve.
+ */
+const EXPECTED: ReadonlyArray<[string, ComplexType<never>, readonly string[]]> = [
+    ['ATTR', ATTR as ComplexType<never>, ['type', 'key', 'value']],
+    ['PROPRIETARY_ID', PROPRIETARY_ID as ComplexType<never>, ['type', 'id']],
+    ['GENRE', GENRE as ComplexType<never>, ['primary', 'sub']],
+    ['PRICE_TIER', PRICE_TIER as ComplexType<never>, ['type', 'name']],
+    ['TEXT', TEXT as ComplexType<never>, ['type', 'language', 'content']],
+    ['LABEL', LABEL as ComplexType<never>, [
+        'vendorLabelID', 'name', 'city', 'state', 'country', 'url', 'notes',
+    ]],
+    ['PARTICIPANT', PARTICIPANT as ComplexType<never>, [
+        'role', 'roleType', 'instrument', 'name', 'primary', 'artistID',
+    ]],
+    ['ASSET', ASSET as ComplexType<never>, [
+        'type', 'subtype', 'name', 'notes', 'format', 'mimeType', 'md5Checksum',
+        'fileName', 'attr',
+    ]],
+    ['PERMISSION', PERMISSION as ComplexType<never>, [
+        'type', 'enabled', 'startDate', 'endDate', 'attr', 'countryCode',
+    ]],
+    ['TERRITORY', TERRITORY as ComplexType<never>, [
+        'countryCode', 'releaseDate', 'permissions',
+    ]],
+    ['TRACK', TRACK as ComplexType<never>, [
+        'vendorTrackID', 'isrc', 'iswc', 'discNumber', 'trackNumber', 'title',
+        'titleVersion', 'work', 'trackLength', 'advisory', 'audioLanguage', 'bpm',
+        'previewStart', 'previewDuration', 'displayArtist', 'participants', 'genres',
+        'tags', 'notes', 'texts', 'cInfo', 'cYear', 'pInfo', 'pYear', 'rightsHolders',
+        'priceTiers', 'permissions', 'territories', 'assets', 'attr',
+    ]],
+    ['RELEASE', RELEASE as ComplexType<never>, [
+        'distributorName', 'exportID', 'exportTime', 'action', 'upc',
+        'vendorReleaseID', 'globalReleaseID', 'catalogID', 'series', 'title',
+        'titleVersion', 'advisory', 'metadataLanguage', 'audioLanguage',
+        'displayArtist', 'participants', 'compilation', 'originalReleaseDate',
+        'releaseDate', 'releaseFormat', 'recordingLocation', 'url', 'genres', 'tags',
+        'notes', 'texts', 'cInfo', 'cYear', 'pInfo', 'pYear', 'rightsHolders',
+        'label', 'priceTiers', 'permissions', 'globalReleaseDate', 'territories',
+        'assets', 'tracks', 'attr',
+    ]],
+];
+
+describe('descriptor tables and input interfaces agree', () => {
+    for (const [name, type, expected] of EXPECTED) {
+        test(`${name} reads exactly the documented input keys`, () => {
+            const keys = type.fields
+                .filter((f) => f.const === undefined)
+                .map((f) => f.key);
+            expect(keys).toEqual(expected as string[]);
+        });
+
+        test(`${name} gives every non-const field a key`, () => {
+            for (const f of type.fields) {
+                if (f.const === undefined) expect(f.key).toBeDefined();
+            }
+        });
+
+        test(`${name} declares a complex type wherever kind is complex`, () => {
+            for (const f of type.fields) {
+                if (f.kind === 'complex') expect(f.type).toBeDefined();
+            }
+        });
+    }
+
+    test('no table has duplicate element names', () => {
+        for (const [name, type] of EXPECTED) {
+            const els = type.fields.map((f) => f.el);
+            expect(new Set(els).size, `${name} has a duplicate element name`).toBe(els.length);
+        }
+    });
+});
+```
+
+Run it:
+
+```bash
+bun test test/spec/shape-agreement.test.ts
+```
+
+Expected: PASS, 37 tests. If it fails, a table and its interface have drifted —
+fix whichever is wrong, then update the literal list here deliberately.
+
+- [ ] **Step 9: Commit**
 
 ```bash
 git add src/model src/spec test/spec
@@ -3419,6 +3822,37 @@ describe('parseRelease', () => {
         const xml = buildRelease(minimal).replace('</release>', '<mystery>1</mystery></release>');
         expect(parseRelease(xml, { onUnknownElement: 'ignore' }).title).toBe('Everything I Wanted');
     });
+
+    test('rejects a v3.2 document', () => {
+        const v32 = buildRelease(minimal)
+            .replaceAll('audiosalad_release_v3.4', 'audiosalad_export_v3.2');
+        expect(() => parseRelease(v32)).toThrow(AudioSaladValidationError);
+    });
+
+    test('rejects a duplicated singleton element', () => {
+        const xml = buildRelease(minimal).replace(
+            '<title>Everything I Wanted</title>',
+            '<title>Everything I Wanted</title>\n    <title>Duplicate</title>',
+        );
+        expect(() => parseRelease(xml)).toThrow(AudioSaladValidationError);
+    });
+
+    test('rejects a non-numeric track_number', () => {
+        const xml = buildRelease(minimal).replace(
+            '<track_number>1</track_number>',
+            '<track_number>abc</track_number>',
+        );
+        expect(() => parseRelease(xml)).toThrow(AudioSaladValidationError);
+    });
+
+    test('rejects a release with no tracks', () => {
+        expect(() =>
+            parseRelease(
+                '<release xmlns="audiosalad_release_v3.4"><schema_id>audiosalad_release_v3.4</schema_id>' +
+                    '<action>add</action><title>t</title><display_artist>a</display_artist></release>',
+            ),
+        ).toThrow(AudioSaladValidationError);
+    });
 });
 ```
 
@@ -3439,12 +3873,20 @@ import type { XmlElement } from './core/node';
 import { parseXml } from './core/parse';
 import { type SerializeOptions, serialize } from './core/serialize';
 import type { ReleaseInput } from './model';
-import { RELEASE, ROOT_ATTRS } from './spec/v3_4';
+import { RELEASE, ROOT_ATTRS, SCHEMA_NAMESPACE } from './spec/v3_4';
 
 export interface BuildOptions extends SerializeOptions {
     /**
-     * Skip validation and emit whatever the input produces. Escaping still
-     * applies unless `onIllegalChars` is `'strip'`. Default `true`.
+     * Suppress the `AudioSaladValidationError` that invalid input would
+     * otherwise raise. Default `true` (validate and throw).
+     *
+     * This does **not** mean "emit whatever you were given". A value that
+     * cannot be formatted at all — a malformed date, a non-integer where the
+     * schema wants `xs:unsignedInt`, a string holding a character XML cannot
+     * represent — is still omitted from the output, because there is nothing
+     * legal to write. Facet violations (a bad ISRC, a short UPC) *are* emitted.
+     * Use this to inspect partial output while debugging, not to bypass the
+     * schema.
      */
     validate?: boolean;
     /**
@@ -3495,9 +3937,15 @@ export const buildRelease = (input: ReleaseInput, opts: BuildOptions = {}): stri
 /**
  * Parses AudioSalad release XML back into a typed input object.
  *
+ * Validation happens during parsing, so a document that is well-formed XML but
+ * not a valid v3.4 release — the wrong namespace or `schema_id`, a missing
+ * required element, duplicated singletons, children out of sequence order, or a
+ * non-numeric integer — is rejected rather than returned as a `ReleaseInput`
+ * that never held those values.
+ *
  * @throws {SyntaxError} when the document is not well-formed XML.
- * @throws {AudioSaladValidationError} when it contains elements outside
- *   schema v3.4, unless `{ onUnknownElement: 'ignore' }` is passed.
+ * @throws {AudioSaladValidationError} when it is not a valid v3.4 release.
+ *   `{ onUnknownElement: 'ignore' }` relaxes only the unknown-element check.
  */
 export const parseRelease = (xml: string, opts: ParseOptions = {}): ReleaseInput => {
     const root = parseXml(xml);
@@ -3505,6 +3953,18 @@ export const parseRelease = (xml: string, opts: ParseOptions = {}): ReleaseInput
         throw new SyntaxError(`expected a <release> root element, found <${root.name}>`);
     }
     const issues: Issue[] = [];
+
+    // The namespace is the first thing that distinguishes a v3.4 document from
+    // a v3.2 one; `parseNode` then checks the `schema_id` fixed value.
+    const ns = root.attrs.find(([k]) => k === 'xmlns')?.[1];
+    if (ns !== undefined && ns !== SCHEMA_NAMESPACE) {
+        issues.push({
+            path: 'xmlns',
+            code: 'enum',
+            message: `expected namespace "${SCHEMA_NAMESPACE}", found "${ns}"`,
+        });
+    }
+
     const out = parseNode(RELEASE, root, {
         path: '',
         issues,
@@ -3524,13 +3984,17 @@ export type { Issue, IssueCode } from './core/issues';
 bun test test/api.test.ts
 ```
 
-Expected: PASS, 13 tests.
+Expected: PASS, 18 tests.
 
 - [ ] **Step 5: Commit**
 
 ```bash
 git add src/api.ts test/api.test.ts
-git commit -m "feat: add buildRelease, validateRelease, and parseRelease"
+git commit -m "feat: add buildRelease, validateRelease, and parseRelease
+
+Parsing validates against the v3.4 tables while consuming the document,
+so a v3.2 file, a wrong namespace, duplicated singletons, or a
+non-numeric integer are rejected rather than silently returned."
 ```
 
 ---
@@ -3558,7 +4022,8 @@ import {
     Asset, Attr, GenreType, Label, Participant, Permission, PriceTier,
     ProprietaryID, Release, Territory, Text, Track,
 } from '../src/legacy/classes';
-import { ParticipantRole } from '../src/enums';
+import { Action, CountryCode, ParticipantRole } from '../src/enums';
+import type { TrackInput } from '../src/model';
 
 describe('Release facade', () => {
     test('constructs from a partial and emits XML', () => {
@@ -3605,6 +4070,30 @@ describe('child facades', () => {
     // 0.1.x shipped ProprietaryID with no constructor, so it could not carry values.
     test('ProprietaryID takes a constructor object', () => {
         expect(new ProprietaryID({ type: 'spotify', id: 'x' }).xml()).toContain('<id>x</id>');
+    });
+
+    test('instances expose input fields without a cast', () => {
+        const t = new Track({ title: 'T', displayArtist: 'A' });
+        const title: string = t.title;
+        expect(title).toBe('T');
+    });
+
+    test('an instance is assignable to its input type', () => {
+        const tracks: TrackInput[] = [new Track({ title: 'T', displayArtist: 'A' })];
+        expect(tracks).toHaveLength(1);
+    });
+
+    // 0.1.x initialized these; dropping them would break partial constructions.
+    test('preserves the 0.1.x field defaults', () => {
+        expect(new Track({ title: 'T', displayArtist: 'A' }).trackNumber).toBe(1);
+        expect(new Participant({ name: 'A' }).primary).toBe(false);
+        expect(new Participant({ name: 'A' }).role).toBe(ParticipantRole.Other);
+        expect(new Permission({ type: ['stream'] }).enabled).toBe(true);
+        expect(new Territory({}).countryCode).toEqual([CountryCode.Worldwide]);
+        expect(new PriceTier({}).type).toBe('iTunes');
+        expect(
+            new Release({ title: 'T', displayArtist: 'A', tracks: [] }).action,
+        ).toBe(Action.Add);
     });
 
     test('fragments carry no XML declaration', () => {
@@ -3762,6 +4251,167 @@ export interface Release extends ReleaseInput {}
 
 Add `import { SAMPLE_RELEASE } from './sample';` to the import block. `sample.ts`
 imports only enums and model types, never `classes.ts`, so there is no cycle.
+
+- [ ] **Step 3: Implement `src/legacy/classes.ts`**
+
+> **Two things the obvious implementation gets wrong.**
+>
+> Returning the class expression directly types instances as `Facade`, so
+> `new Track({...}).title` is a compile error and a `Track` is not assignable to
+> `TrackInput` — which breaks `new Release({ tracks: [new Track(...)] })`. The
+> factory must be cast to an explicit `FacadeClass<I>` construct signature.
+>
+> The 0.1.x classes also initialized fields (`Release.action = Action.Add`,
+> `Track.trackNumber = 1`, `Participant.role`/`primary`, `Permission.enabled`,
+> `Territory.countryCode`, `PriceTier.type`/`name`). Dropping them would turn
+> previously valid partial constructions into validation failures, so the
+> factory carries per-class `defaults`.
+
+```ts
+import { type ComplexType, buildNode } from '../core/descriptor';
+import { AudioSaladValidationError, type Issue } from '../core/issues';
+import { serialize } from '../core/serialize';
+import { Action } from '../enums/action';
+import { CountryCode } from '../enums/country';
+import { ParticipantRole } from '../enums/participant-role';
+import type {
+    AssetInput, AttrInput, GenreInput, LabelInput, ParticipantInput, PermissionInput,
+    PriceTierInput, ProprietaryIdInput, ReleaseInput, TerritoryInput, TextInput, TrackInput,
+} from '../model';
+import {
+    ASSET, ATTR, GENRE, LABEL, PARTICIPANT, PERMISSION, PRICE_TIER,
+    PROPRIETARY_ID, RELEASE, ROOT_ATTRS, TERRITORY, TEXT, TRACK,
+} from '../spec/v3_4';
+import { SAMPLE_RELEASE } from './sample';
+
+/** Alias for a string, implying AudioSalad-compatible XML. */
+export type AudioSaladXML = string;
+
+/** What every facade class adds on top of its input fields. */
+export interface FacadeMethods {
+    /** Collects validation issues without throwing. */
+    validate(): Issue[];
+    /**
+     * Generates AudioSalad XML.
+     *
+     * @throws {AudioSaladValidationError} when the object is invalid.
+     */
+    xml(): AudioSaladXML;
+}
+
+/** Instances expose the input fields as public properties, as 0.1.x did. */
+export type FacadeClass<I> = new (input: Partial<I>) => I & FacadeMethods;
+
+interface FacadeOptions<I> {
+    /** Field defaults, preserving the 0.1.x class initializers. */
+    defaults?: Partial<I>;
+    /** Root elements carry namespace attributes and an XML declaration. */
+    root?: boolean;
+}
+
+const facade = <I extends object>(
+    type: ComplexType<I>,
+    elName: string,
+    { defaults, root = false }: FacadeOptions<I> = {},
+): FacadeClass<I> =>
+    class Facade {
+        constructor(input: Partial<I>) {
+            Object.assign(this, defaults, input);
+        }
+
+        validate(): Issue[] {
+            const issues: Issue[] = [];
+            buildNode(type, this as unknown as I, elName, {
+                path: '',
+                issues,
+                onIllegalChars: 'error',
+            });
+            return issues;
+        }
+
+        xml(): AudioSaladXML {
+            const issues: Issue[] = [];
+            const node = buildNode(type, this as unknown as I, elName, {
+                path: '',
+                issues,
+                onIllegalChars: 'error',
+            });
+            if (issues.length > 0) throw new AudioSaladValidationError(issues);
+            return serialize(root ? { ...node, attrs: ROOT_ATTRS } : node, {
+                xmlDeclaration: root,
+            });
+        }
+        // The cast is what gives callers `I & FacadeMethods` instead of `Facade`.
+    } as unknown as FacadeClass<I>;
+
+/** `attr_type` — a generic key/value pair. */
+export const Attr = facade<AttrInput>(ATTR, 'attr');
+export type Attr = AttrInput & FacadeMethods;
+
+/** A proprietary participant ID, e.g. a Spotify or Apple artist ID. */
+export const ProprietaryID = facade<ProprietaryIdInput>(PROPRIETARY_ID, 'artist_id');
+export type ProprietaryID = ProprietaryIdInput & FacadeMethods;
+
+/** `genre_type` — a genre at up to two levels of detail. */
+export const GenreType = facade<GenreInput>(GENRE, 'genre');
+export type GenreType = GenreInput & FacadeMethods;
+
+/** `price_tier_type` — a pricing tier for a download platform. */
+export const PriceTier = facade<PriceTierInput>(PRICE_TIER, 'price_tier', {
+    defaults: { type: 'iTunes', name: 'Mid' },
+});
+export type PriceTier = PriceTierInput & FacadeMethods;
+
+/** `text_type` — descriptions, reviews, liner notes, or lyrics. */
+export const Text = facade<TextInput>(TEXT, 'text');
+export type Text = TextInput & FacadeMethods;
+
+/** `label_type` — the record label behind a release. */
+export const Label = facade<LabelInput>(LABEL, 'label');
+export type Label = LabelInput & FacadeMethods;
+
+/** `participant_type` — anyone involved in a recording or release. */
+export const Participant = facade<ParticipantInput>(PARTICIPANT, 'participant', {
+    defaults: { role: ParticipantRole.Other, primary: false },
+});
+export type Participant = ParticipantInput & FacadeMethods;
+
+/** `asset_type` — an audio recording, artwork image, or arbitrary file. */
+export const Asset = facade<AssetInput>(ASSET, 'asset');
+export type Asset = AssetInput & FacadeMethods;
+
+/** `permission_type` — a date- and region-bounded distribution permission. */
+export const Permission = facade<PermissionInput>(PERMISSION, 'permission', {
+    defaults: { enabled: true },
+});
+export type Permission = PermissionInput & FacadeMethods;
+
+/** `territory_type` — a release's or track's presence in a place. */
+export const Territory = facade<TerritoryInput>(TERRITORY, 'territory', {
+    defaults: { countryCode: [CountryCode.Worldwide] },
+});
+export type Territory = TerritoryInput & FacadeMethods;
+
+/** `track_type` — a single audio track within a release. */
+export const Track = facade<TrackInput>(TRACK, 'track', { defaults: { trackNumber: 1 } });
+export type Track = TrackInput & FacadeMethods;
+
+const ReleaseBase = facade<ReleaseInput>(RELEASE, 'release', {
+    defaults: { action: Action.Add },
+    root: true,
+});
+
+/** The `release` root element. */
+export class Release extends ReleaseBase {
+    /** A fully populated example, useful for testing an integration. */
+    static sample(): Release {
+        return new Release(SAMPLE_RELEASE);
+    }
+}
+```
+
+> `sample.ts` imports only enums and model types, never `classes.ts`, so there
+> is no cycle. Write it first (next step).
 
 - [ ] **Step 4: Implement `src/legacy/sample.ts`**
 
@@ -3944,7 +4594,7 @@ export {
     Asset, Attr, GenreType, Label, Participant, Permission, PriceTier,
     ProprietaryID, Release, Territory, Text, Track,
 } from './legacy/classes';
-export type { AudioSaladXML } from './legacy/classes';
+export type { AudioSaladXML, FacadeMethods } from './legacy/classes';
 ```
 
 - [ ] **Step 6: Run the full suite and the typecheck**
@@ -4130,9 +4780,16 @@ describe('golden files', () => {
 
             test('matches the committed golden file', () => {
                 const path = goldenPath(name);
-                // Set UPDATE_GOLDEN=1 to regenerate after an intentional change.
-                if (process.env.UPDATE_GOLDEN === '1' || !existsSync(path)) {
+                // Only UPDATE_GOLDEN=1 may write. Regenerating a *missing* file
+                // automatically would let an accidental deletion pass CI.
+                if (process.env.UPDATE_GOLDEN === '1') {
                     writeFileSync(path, xml);
+                }
+                if (!existsSync(path)) {
+                    throw new Error(
+                        `Golden file ${path} is missing. If this fixture is new, run ` +
+                            'UPDATE_GOLDEN=1 bun test and commit the result.',
+                    );
                 }
                 expect(xml).toBe(readFileSync(path, 'utf8'));
             });
@@ -4225,9 +4882,65 @@ const participantArb = fc.record(
     { requiredKeys: ['role', 'name'] },
 );
 
+/** Both accepted date forms, so the build/parse normalization is exercised. */
+const dateOnlyArb = fc.oneof(
+    fc.date({ min: new Date('1970-01-01T00:00:00Z'), max: new Date('2200-01-01T00:00:00Z'), noInvalidDate: true }),
+    fc.stringMatching(/^20[0-2][0-9]-(0[1-9]|1[0-2])-(0[1-9]|1[0-9]|2[0-8])$/),
+);
+const dateTimeArb = fc.oneof(
+    fc.date({ min: new Date('1970-01-01T00:00:00Z'), max: new Date('2200-01-01T00:00:00Z'), noInvalidDate: true }),
+    fc.stringMatching(/^20[0-2][0-9]-(0[1-9]|1[0-2])-(0[1-9]|1[0-9]|2[0-8])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]Z$/),
+);
+const partialDateArb = fc.oneof(
+    dateOnlyArb,
+    fc.stringMatching(/^20[0-2][0-9]$/),
+    fc.stringMatching(/^20[0-2][0-9]-(0[1-9]|1[0-2])$/),
+);
+
+const assetArb = fc.record(
+    {
+        type: fc.constantFrom('audio', 'image', 'asset'),
+        fileName: xmlSafeString,
+        subtype: xmlSafeString,
+        notes: xmlSafeString,
+        format: xmlSafeString,
+        mimeType: fc.constantFrom('audio/flac', 'image/jpeg', 'application/pdf'),
+        md5Checksum: fc.stringMatching(/^[0-9a-f]{32}$/),
+        attr: fc.array(attrArb, { maxLength: 2 }),
+    },
+    { requiredKeys: ['type', 'fileName'] },
+);
+
+const permissionArb = fc.record(
+    {
+        type: fc.array(fc.constantFrom('stream', 'download', 'preorder', 'subscription'), {
+            minLength: 1,
+            maxLength: 3,
+        }),
+        enabled: fc.boolean(),
+        startDate: dateTimeArb,
+        endDate: dateTimeArb,
+        attr: fc.array(attrArb, { maxLength: 2 }),
+        countryCode: fc.array(countryCode, { maxLength: 3 }),
+    },
+    { requiredKeys: ['type', 'enabled'] },
+);
+
+const territoryArb = fc.record(
+    {
+        countryCode: fc.array(countryCode, { minLength: 1, maxLength: 3 }),
+        releaseDate: dateTimeArb,
+        permissions: fc.array(permissionArb, { maxLength: 2 }),
+    },
+    { requiredKeys: ['countryCode'] },
+);
+
 const trackArb = fc.record(
     {
         trackNumber: fc.integer({ min: 1, max: 99 }),
+        assets: fc.array(assetArb, { maxLength: 2 }),
+        permissions: fc.array(permissionArb, { maxLength: 2 }),
+        territories: fc.array(territoryArb, { maxLength: 2 }),
         title: xmlSafeString,
         displayArtist: xmlSafeString,
         discNumber: fc.integer({ min: 1, max: 5 }),
@@ -4253,23 +4966,19 @@ const releaseArb: fc.Arbitrary<ReleaseInput> = fc.record(
         distributorName: xmlSafeString,
         upc: fc.stringMatching(/^[0-9]{12,14}$/),
         compilation: fc.boolean(),
+        exportTime: dateTimeArb,
+        releaseDate: dateOnlyArb,
+        originalReleaseDate: partialDateArb,
+        globalReleaseDate: dateTimeArb,
+        assets: fc.array(assetArb, { maxLength: 2 }),
         releaseFormat: fc.constantFrom('single', 'album', 'ep', 'dj mix'),
         recordingLocation: countryCode,
         cYear: fc.integer({ min: 1000, max: 9999 }),
         genres: fc.array(fc.record({ primary: xmlSafeString }), { maxLength: 2 }),
         tags: fc.array(xmlSafeString, { maxLength: 3 }),
         label: fc.record({ name: xmlSafeString }),
-        territories: fc.array(
-            fc.record({ countryCode: fc.array(countryCode, { minLength: 1, maxLength: 3 }) }),
-            { maxLength: 2 },
-        ),
-        permissions: fc.array(
-            fc.record({
-                type: fc.array(fc.constantFrom('stream', 'download', 'preorder'), { minLength: 1, maxLength: 3 }),
-                enabled: fc.boolean(),
-            }),
-            { maxLength: 2 },
-        ),
+        territories: fc.array(territoryArb, { maxLength: 2 }),
+        permissions: fc.array(permissionArb, { maxLength: 2 }),
         attr: fc.array(attrArb, { maxLength: 2 }),
     },
     { requiredKeys: ['action', 'title', 'displayArtist', 'tracks'] },
@@ -4306,7 +5015,7 @@ describe('properties', () => {
 });
 
 describe('parser robustness', () => {
-    test('never hangs or returns a non-Error on arbitrary input', () => {
+    test('arbitrary input either parses or throws an Error, never hangs', () => {
         fc.assert(
             fc.property(fc.string({ maxLength: 200 }), (s) => {
                 try {
@@ -4316,6 +5025,26 @@ describe('parser robustness', () => {
                 }
             }),
             { numRuns: 500 },
+        );
+    });
+
+    // The property above passes whenever parsing merely succeeds, so it cannot
+    // detect a parser that accepts everything. These mutations must be rejected.
+    test('mutating a valid document into an invalid one is always rejected', () => {
+        fc.assert(
+            fc.property(
+                releaseArb,
+                fc.constantFrom<(x: string) => string>(
+                    (x) => x.replace('</release>', ''),
+                    (x) => x.replace('<title>', '<title'),
+                    (x) => x.replace('audiosalad_release_v3.4', 'audiosalad_export_v3.2'),
+                    (x) => `${x}<trailing/>`,
+                ),
+                (input, mutate) => {
+                    expect(() => parseRelease(mutate(buildRelease(input)))).toThrow();
+                },
+            ),
+            { numRuns: 100 },
         );
     });
 });
@@ -4422,18 +5151,23 @@ describe('0.1.x regressions', () => {
         expect(buildRelease(bad, { onIllegalChars: 'strip' })).toContain('<title>BadTitle</title>');
     });
 
-    test('defect 6: a UTC date is not shifted by a day', () => {
-        const xml = buildRelease({ ...base, releaseDate: new Date(Date.UTC(2020, 4, 2, 23, 30)) });
+    test('documented, not a defect: a Date is read in UTC', () => {
+        // 0.1.x did the same thing. This pins the behaviour rather than
+        // claiming a fix; pass a string for an unambiguous calendar date.
+        const xml = buildRelease({ ...base, releaseDate: new Date('2020-05-02T23:30:00Z') });
         expect(xml).toContain('<release_date>2020-05-02</release_date>');
+        expect(buildRelease({ ...base, releaseDate: '2020-05-02' })).toContain(
+            '<release_date>2020-05-02</release_date>',
+        );
     });
 
-    test('defect 7: the public barrel loads and exports values', async () => {
+    test('defect 6: the public barrel loads and exports values', async () => {
         const mod = (await import('../src/index')) as Record<string, unknown>;
         expect(typeof mod.buildRelease).toBe('function');
         expect(typeof mod.Release).toBe('function');
     });
 
-    test('defect 8: the suite actually asserts — a broken release throws', () => {
+    test('defect 7: the suite actually asserts — a broken release throws', () => {
         expect(() => buildRelease({ ...base, tracks: [] })).toThrow();
     });
 
@@ -4443,6 +5177,23 @@ describe('0.1.x regressions', () => {
             texts: [{ type: 'Liner Notes', content: 'one\ntwo\nthree' }],
         });
         expect(xml).toContain('one\ntwo\nthree');
+    });
+
+    test('the 0.1.x class defaults still apply', () => {
+        // Regression for the facade rewrite: dropping these would turn
+        // previously valid partial constructions into validation failures.
+        expect(new Track({ title: 'T', displayArtist: 'A' }).trackNumber).toBe(1);
+        expect(new Participant({ name: 'A' }).primary).toBe(false);
+    });
+
+    test('a repeated field rejects the 0.1.x scalar shape', () => {
+        // Permission.type became a list in v3.4; wrapping silently would hide it.
+        expect(
+            validateRelease({
+                ...base,
+                permissions: [{ type: 'stream' as unknown as string[], enabled: true }],
+            })[0],
+        ).toMatchObject({ code: 'cardinality' });
     });
 
     test('Release.sample() exercises all four previously dropped paths', () => {
@@ -4664,7 +5415,6 @@ jobs:
   commits:
     name: Conventional commits
     runs-on: namespace-profile-default
-    if: github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v5
         with:
@@ -4673,13 +5423,27 @@ jobs:
         with:
           bun-version-file: package.json
       - run: bun install --frozen-lockfile
-      - name: Lint commit messages in this PR
+      - name: Lint commit messages
         run: |
-          bunx commitlint \
-            --from "${{ github.event.pull_request.base.sha }}" \
-            --to "${{ github.event.pull_request.head.sha }}" \
-            --verbose
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            FROM="${{ github.event.pull_request.base.sha }}"
+            TO="${{ github.event.pull_request.head.sha }}"
+          else
+            # Direct pushes are linted too, so the guarantee does not depend on
+            # branch protection being configured. `before` is all-zeros on the
+            # first push to a new branch; fall back to the single head commit.
+            FROM="${{ github.event.before }}"
+            TO="${{ github.sha }}"
+            if [ "$FROM" = "0000000000000000000000000000000000000000" ]; then
+              FROM="$(git rev-parse "$TO"^ 2>/dev/null || echo "$TO")"
+            fi
+          fi
+          bunx commitlint --from "$FROM" --to "$TO" --verbose
 ```
+
+> The `commits` job runs on pushes as well as pull requests. Enforcing it only
+> on PRs would make "nothing lands non-conforming" depend on branch protection
+> that this repository does not yet have.
 
 > `bun-version-file: package.json` makes `setup-bun` read the pinned `packageManager` field, so CI and local development cannot drift.
 
@@ -4783,6 +5547,9 @@ Rebuild the library around AudioSalad schema v3.4, with validation and parsing.
   `{ xmlDeclaration: false }` for the previous behaviour.
 - Optional booleans are emitted when `false`; multi-line text is no longer
   collapsed.
+- `parseRelease` validates: a v3.2 document, a wrong namespace or `schema_id`,
+  duplicated singletons, out-of-order children, or a non-numeric integer are
+  rejected rather than returned.
 - Node 20 or later is required.
 
 **Fixed**
@@ -4792,7 +5559,6 @@ Rebuild the library around AudioSalad schema v3.4, with validation and parsing.
 - Numeric fields used falsy guards, so a legitimate `0` — notably
   `preview_start` — was dropped.
 - Control characters were emitted unescaped, producing unparseable documents.
-- Dates were converted through UTC implicitly and could shift by a day.
 - The package could not be loaded by any modern bundler, because a type was
   re-exported as a value.
 - The test suite asserted nothing.
@@ -4806,6 +5572,16 @@ Rebuild the library around AudioSalad schema v3.4, with validation and parsing.
 - `ReleaseFormat.DJMix`, `ParticipantRole.PrimaryArtist`, and
   `ParticipantRole.Publisher`.
 - Zero runtime dependencies: `xml-escape` and `xml-formatter` are gone.
+
+**Unchanged, now documented**
+
+- A `Date` is read in **UTC**, exactly as 0.1.x did. For a calendar date such as
+  `release_date`, pass a string (`'2020-05-02'`) — it is unambiguous in every
+  timezone, whereas `new Date(2020, 4, 2)` is local midnight and
+  `new Date('2020-05-02')` is UTC midnight.
+- The class field defaults (`Release.action`, `Track.trackNumber`,
+  `Permission.enabled`, `Territory.countryCode`, `PriceTier.type`/`name`,
+  `Participant.role`/`primary`) are preserved.
 ```
 
 - [ ] **Step 3: Create `.github/workflows/release.yml`**
@@ -4848,8 +5624,20 @@ jobs:
 
       - run: bun install --frozen-lockfile
 
+      # Publishing must not race CI. The full gate runs here so a failing test,
+      # typecheck, XSD validation, or export check blocks the publish itself.
+      - name: Lint
+        run: bun run lint
+      - name: Typecheck
+        run: bun run typecheck
+      - name: Test
+        run: bun test
       - name: Build
         run: bun run build
+      - name: Bundle size budget
+        run: bun run size
+      - name: Validate published package
+        run: bun run check:exports
 
       - name: Create a version PR or publish
         uses: changesets/action@v1
@@ -5088,13 +5876,20 @@ Malformed XML throws `SyntaxError`. Elements outside schema v3.4 throw
 
 ## Dates
 
-Every date field accepts a `Date` or a string. **A `Date` is always formatted in
-UTC.** Pass a string when you need exact control:
+Every date field accepts a `Date` or a string. **A `Date` is always read in
+UTC** — the same as 0.1.x, now documented.
+
+That is a sharp edge for *calendar* dates, and no formatting rule removes it:
+`new Date(2020, 4, 2)` is local midnight while `new Date('2020-05-02')` is UTC
+midnight, so any single rule reads one of them off by a day.
+
+**For calendar dates, pass a string.** It is unambiguous in every timezone:
 
 ```ts
-{ releaseDate: new Date(Date.UTC(2020, 4, 2)) }   // -> 2020-05-02
-{ releaseDate: '2020-05-02' }                     // -> 2020-05-02
-{ originalReleaseDate: '2019' }                   // partial dates are allowed
+{ releaseDate: '2020-05-02' }                      // -> 2020-05-02, always
+{ originalReleaseDate: '2019' }                    // partial dates are allowed
+{ releaseDate: new Date('2020-05-02T00:00:00Z') }  // -> 2020-05-02 (UTC)
+{ releaseDate: new Date(2020, 4, 2) }              // -> 2020-05-01 west of UTC
 ```
 
 ## Class API
@@ -5120,7 +5915,12 @@ Release.sample();     // a fully populated example
 | XML declaration is emitted | Pass `{ xmlDeclaration: false }` to restore the old output |
 | `compilation: false` is now emitted | Omit the key entirely for absence |
 | Multi-line text is no longer collapsed | Output is verbatim; no action needed |
+| `parseRelease` rejects non-v3.4 documents | Intended — it validates while parsing |
 | Node 20+ required | Upgrade your runtime |
+
+Class field defaults (`Release.action`, `Track.trackNumber`, `Permission.enabled`,
+`Territory.countryCode`, `PriceTier.type`/`name`, `Participant.role`/`primary`)
+are **preserved**, so partial constructions that worked before still work.
 
 Four element groups that 0.1.x silently dropped now appear in the output:
 `participant/artist_id`, `asset/attr`, `territory/permission`, and any numeric
@@ -5165,6 +5965,7 @@ against schema **v3.4** (`schemas/audiosalad_release_v3.4.xsd`). It ships with
 | `bun run size` | Assert the gzipped bundle budget |
 | `bun run check:exports` | publint + are-the-types-wrong |
 | `bun run docs` | Generate typedoc into `api-docs/` |
+| `bun run changeset` | Record a release note; required for any user-facing change |
 | `UPDATE_GOLDEN=1 bun test` | Regenerate golden files after an intended change |
 
 ## The one architectural rule
@@ -5207,9 +6008,12 @@ inexpressible in spec code, but they remain easy to reintroduce elsewhere.
 2. **Falsy guards on numbers.** `n ? emit(n) : ''` drops a legitimate `0`.
    `preview_start: 0` means "preview from the start". Presence is
    `value !== undefined`.
-3. **Implicit UTC.** `date.toISOString().split('T')[0]` converts through UTC and
-   can shift a local-time date by a day. Use `src/core/datetime.ts`, which is
-   explicit about it.
+3. **`Date` is an instant, not a calendar date.** Reading it in UTC is a
+   deliberate, documented choice, not a bug to "fix" — `new Date(2020, 4, 2)`
+   is local midnight and `new Date('2020-05-02')` is UTC midnight, so no single
+   rule reads both as May 2. Changing to local getters would trade one silent
+   off-by-one for another. `test/core/datetime.test.ts` pins the behaviour
+   under three timezones; steer callers to strings instead.
 4. **Type-only exports.** `export { SomeType }` for a type breaks every modern
    bundler. `verbatimModuleSyntax` now catches it; use `export type`.
 5. **Escaping is not enough.** XML 1.0 cannot represent C0 control characters or
@@ -5291,9 +6095,9 @@ Confirm every item before declaring the plan complete:
 - [ ] `bun install && bun run build && bun test` passes from a clean checkout
 - [ ] `bun run check:exports` reports no publint or attw problems
 - [ ] Every golden fixture validates against `schemas/audiosalad_release_v3.4.xsd`
-- [ ] All eight defects have a named test in `test/regressions.test.ts`
+- [ ] All seven defects have a named test in `test/regressions.test.ts`
 - [ ] Runtime `dependencies` is `{}`
 - [ ] `bunx commitlint --from <base> --to HEAD` passes over the whole branch
-- [ ] `.changeset/initial-1-0.md` describes the 1.0.0 major
+- [ ] `package.json` is still `0.1.5`; `bunx changeset status` reports a bump to `1.0.0`
 - [ ] `CLAUDE.md` is a symlink (git mode `120000`)
 - [ ] The four repository preconditions in `AGENTS.md` are reported to the owner
