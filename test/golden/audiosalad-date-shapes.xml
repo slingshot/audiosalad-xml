@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<release xmlns="audiosalad_release_v3.4" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="audiosalad_release_v3.4 https://audiosalad-xsd.s3.amazonaws.com/audiosalad_release_v3.4.xsd">
+    <schema_id>audiosalad_release_v3.4</schema_id>
+    <export_time>2024-02-20T16:32:12Z</export_time>
+    <action>add</action>
+    <title>Unzoned Dates</title>
+    <display_artist>Someone</display_artist>
+    <original_release_date>2019-08-01</original_release_date>
+    <release_date>2019-08-01</release_date>
+    <c_year>2014</c_year>
+    <p_year>2014</p_year>
+    <permission>
+        <type>preorder</type>
+        <enabled>true</enabled>
+        <start_date>2019-07-19T00:00:00</start_date>
+    </permission>
+    <territory>
+        <country_code>WW</country_code>
+        <release_date>2019-08-01T00:00:00</release_date>
+    </territory>
+    <track>
+        <track_number>1</track_number>
+        <title>T</title>
+        <display_artist>Someone</display_artist>
+        <permission>
+            <type>stream</type>
+            <enabled>true</enabled>
+            <start_date>2019-07-19T00:00:00</start_date>
+        </permission>
+    </track>
+</release>

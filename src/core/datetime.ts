@@ -1,10 +1,13 @@
 export type DateLike = Date | string;
 
-const DATE_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
+// The timezone suffix is OPTIONAL in both xs:date and xs:dateTime. AudioSalad's
+// own exports use unzoned values for permission/start_date and territory/
+// release_date, so requiring one rejects real documents the schema accepts.
+const DATE_RE = /^(\d{4})-(\d{2})-(\d{2})(?:Z|[+-]\d{2}:\d{2})?$/;
 const YEAR_MONTH_RE = /^(\d{4})-(\d{2})$/;
 const YEAR_RE = /^\d{4}$/;
 const DATETIME_RE =
-    /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d+)?(Z|[+-]\d{2}:\d{2})$/;
+    /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d+)?(Z|[+-]\d{2}:\d{2})?$/;
 
 const isValidDate = (d: Date): boolean => !Number.isNaN(d.getTime());
 const pad = (n: number, width = 2): string => String(n).padStart(width, '0');
@@ -21,8 +24,8 @@ const isRealYmd = (y: number, m: number, d: number): boolean => {
 const isRealTime = (h: number, min: number, sec: number): boolean =>
     h >= 0 && h <= 24 && min >= 0 && min <= 59 && sec >= 0 && sec <= 60;
 
-const isRealOffset = (off: string): boolean => {
-    if (off === 'Z') return true;
+const isRealOffset = (off: string | undefined): boolean => {
+    if (off === undefined || off === 'Z') return true;
     const h = Number(off.slice(1, 3));
     const m = Number(off.slice(4, 6));
     return h <= 14 && m <= 59 && !(h === 14 && m > 0);
@@ -47,7 +50,9 @@ export const formatDateTime = (v: DateLike): string | undefined => {
         const ok =
             isRealYmd(Number(m[1]), Number(m[2]), Number(m[3])) &&
             isRealTime(Number(m[4]), Number(m[5]), Number(m[6])) &&
-            isRealOffset(m[7] as string);
+            isRealOffset(m[7]);
+        // Passed through verbatim: an unzoned value stays unzoned, so a
+        // round trip does not invent a timezone the source did not state.
         return ok ? v : undefined;
     }
     if (!isValidDate(v)) return undefined;

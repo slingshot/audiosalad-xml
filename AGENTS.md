@@ -87,7 +87,13 @@ inexpressible in spec code, but they remain easy to reintroduce elsewhere.
    under three timezones; steer callers to strings instead.
 4. **Type-only exports.** `export { SomeType }` for a type breaks every modern
    bundler. `verbatimModuleSyntax` now catches it; use `export type`.
-5. **Escaping is not enough.** XML 1.0 cannot represent C0 control characters or
+5. **Never be narrower than the XSD.** A formatter or facet that rejects
+   schema-legal input looks safe — it cannot emit invalid XML — but it makes the
+   library refuse real documents. `xs:dateTime` has an *optional* timezone, and
+   AudioSalad's own exports omit it; requiring one meant `parseRelease` rejected
+   their published sample. When in doubt, accept what the schema accepts and let
+   the XSD be the authority. `test/golden/audiosalad-date-shapes.xml` pins this.
+6. **Escaping is not enough.** XML 1.0 cannot represent C0 control characters or
    lone surrogates at all, even as character references. `findIllegalChar`
    catches them before they reach output.
 

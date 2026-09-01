@@ -56,6 +56,32 @@ const multiTerritory: ReleaseInput = {
     tracks: [{ trackNumber: 1, title: 'T', displayArtist: 'Someone' }],
 };
 
+/**
+ * Mirrors the date shapes in AudioSalad's own published sample export: a zoned
+ * `export_time`, a date-only release_date, and UNZONED dateTimes on
+ * permission/start_date and territory/release_date.
+ */
+const audiosaladDateShapes: ReleaseInput = {
+    action: 'add',
+    title: 'Unzoned Dates',
+    displayArtist: 'Someone',
+    exportTime: '2024-02-20T16:32:12Z',
+    releaseDate: '2019-08-01',
+    originalReleaseDate: '2019-08-01',
+    cYear: 2014,
+    pYear: 2014,
+    permissions: [{ type: ['preorder'], enabled: true, startDate: '2019-07-19T00:00:00' }],
+    territories: [{ countryCode: ['WW'], releaseDate: '2019-08-01T00:00:00' }],
+    tracks: [
+        {
+            trackNumber: 1,
+            title: 'T',
+            displayArtist: 'Someone',
+            permissions: [{ type: ['stream'], enabled: true, startDate: '2019-07-19T00:00:00' }],
+        },
+    ],
+};
+
 /** Every fixture is serialized to a golden file and validated against the XSD. */
 export const FIXTURES: ReadonlyArray<{ name: string; input: ReleaseInput }> = [
     { name: 'minimal', input: minimal },
@@ -63,4 +89,5 @@ export const FIXTURES: ReadonlyArray<{ name: string; input: ReleaseInput }> = [
     { name: 'unicode', input: unicode },
     { name: 'multi-disc', input: multiDisc },
     { name: 'multi-territory', input: multiTerritory },
+    { name: 'audiosalad-date-shapes', input: audiosaladDateShapes },
 ];
