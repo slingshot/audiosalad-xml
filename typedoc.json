@@ -1,0 +1,15 @@
+{
+    "$schema": "https://typedoc.org/schema.json",
+    "entryPoints": ["src/index.ts"],
+    "out": "api-docs",
+    "name": "@ssh/audiosalad-xml",
+    "readme": "README.md",
+    "includeVersion": true,
+    "excludePrivate": true,
+    "excludeInternal": true,
+    "categorizeByGroup": true,
+    "navigationLinks": {
+        "GitHub": "https://github.com/slingshot/audiosalad-xml",
+        "npm": "https://www.npmjs.com/package/@ssh/audiosalad-xml"
+    }
+}
