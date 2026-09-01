@@ -155,19 +155,21 @@ export interface ComplexType<I> {
 }
 ```
 
-Three functions consume it:
+Two functions consume it:
 
-- `buildNode(type, input, elName, ctx): XmlNode` — walks fields in order.
-- `collectIssues(type, input, path, issues, ctx): void` — walks the same fields.
-- `parseNode(type, node, path): I` — inverts the walk.
+- `buildNode(type, input, elName, ctx): XmlElement` — walks fields in order,
+  formatting values *and* collecting issues in the same pass. `validateRelease`
+  is this function with the tree discarded, so validation and serialization
+  cannot drift apart.
+- `parseNode(type, node, ctx): I` — inverts the walk.
 
 **What this eliminates by construction.** Ordering drift is impossible: there is
 one ordered list and the serializer cannot deviate from it. Dropped children are
 impossible: arity is a descriptor property (`max > 1` ⇒ map-and-append), never
 hand-written JS, so defects 1–3 have no expressible form. Falsy-zero drops are
 impossible: presence is `value !== undefined`, never truthiness. And a field
-absent from the table does not exist in *any* of the three behaviours, so
-build/validate/parse cannot disagree about the schema.
+absent from the table does not exist in *any* of build, validate, or parse, so
+those three behaviours cannot disagree about the schema.
 
 **Deliberate limit on abstraction.** Descriptors are data; the input interfaces
 in `model/` are hand-written TypeScript. Deriving the input types from the tables
@@ -186,7 +188,6 @@ re-serializes the whole subtree O(depth) times.
 interface SerializeOptions {
   indent?: string | false;        // default '    '
   xmlDeclaration?: boolean;       // default true
-  onIllegalChars?: 'error' | 'strip';  // default 'error'
 }
 ```
 
@@ -286,6 +287,8 @@ function parseRelease(xml: string, opts?: ParseOptions): ReleaseInput;
 interface BuildOptions extends SerializeOptions {
   /** Skip validation. Default false. Escaping is still applied. */
   validate?: boolean;
+  /** Policy for XML-illegal characters, applied while values are formatted. */
+  onIllegalChars?: 'error' | 'strip';  // default 'error'
 }
 interface ParseOptions {
   onUnknownElement?: 'error' | 'ignore';  // default 'error'
