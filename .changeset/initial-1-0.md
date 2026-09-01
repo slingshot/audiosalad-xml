@@ -19,8 +19,10 @@ Rebuild the library around AudioSalad schema v3.4, with validation and parsing.
 - Optional booleans are emitted when `false`; multi-line text is no longer
   collapsed.
 - `parseRelease` validates: a v3.2 document, a wrong namespace or `schema_id`,
-  duplicated singletons, out-of-order children, or a non-numeric integer are
-  rejected rather than returned.
+  duplicated singletons, out-of-order children, a non-numeric integer, or any
+  value violating an XSD facet (a malformed ISRC, a non-numeric `upc_ean`, an
+  unknown `action` or `release_format`, a three-letter country code) is rejected
+  rather than returned.
 - Node 20 or later is required.
 
 **Fixed**
@@ -43,6 +45,8 @@ Rebuild the library around AudioSalad schema v3.4, with validation and parsing.
 - `ReleaseFormat.DJMix`, `ParticipantRole.PrimaryArtist`, and
   `ParticipantRole.Publisher`.
 - Zero runtime dependencies: `xml-escape` and `xml-formatter` are gone.
+- The published tarball carries no install lifecycle script, and its declaration
+  files no longer reference a sourcemap that is not shipped.
 
 **Unchanged, now documented**
 
