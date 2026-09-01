@@ -7,5 +7,7 @@ export { PARTICIPANT } from './participant';
 export { PERMISSION } from './permission';
 export { PRICE_TIER } from './price-tier';
 export { PROPRIETARY_ID } from './proprietary-id';
+export { RELEASE, ROOT_ATTRS } from './release';
 export { TERRITORY } from './territory';
 export { TEXT } from './text';
+export { TRACK } from './track';
