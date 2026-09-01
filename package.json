@@ -44,7 +44,7 @@
         "ddex"
     ],
     "scripts": {
-        "build": "tsdown",
+        "build": "tsdown && bun run scripts/postbuild.ts",
         "typecheck": "tsc --noEmit",
         "lint": "biome check .",
         "lint:fix": "biome check --write .",
@@ -57,7 +57,8 @@
         "changeset": "changeset",
         "version": "changeset version",
         "release": "bun run build && npm publish",
-        "prepare": "lefthook install || true"
+        "hooks:install": "lefthook install",
+        "test:tz": "for tz in UTC America/Los_Angeles Asia/Tokyo; do TZ=$tz bun test || exit 1; done"
     },
     "dependencies": {},
     "devDependencies": {
@@ -68,15 +69,12 @@
         "@commitlint/cli": "^21.2.2",
         "@commitlint/config-conventional": "^21.2.2",
         "@types/bun": "latest",
-        "@types/xml-escape": "^1.1.0",
         "fast-check": "^4.9.0",
         "lefthook": "^2.1.12",
         "publint": "^0.3.24",
         "tsdown": "^0.22.14",
         "typedoc": "^0.28.20",
         "typescript": "^5.9.0",
-        "xml-escape": "^1.1.0",
-        "xml-formatter": "^2.4.0",
         "xmllint-wasm": "^5.3.0"
     }
 }

@@ -96,10 +96,21 @@ describe('0.1.x regressions', () => {
         for (const rel of files) {
             const src = await Bun.file(`${TEST_DIR}/${rel}`).text();
             src.split('\n').forEach((line, i) => {
-                // `.resolves` / `.rejects` must be followed by a matcher call,
-                // never terminate the statement.
+                const trimmed = line.trim();
+                // Two shapes of the same bug. (a) the 0.1.x original: the
+                // getter is read and discarded, so no matcher ever runs.
                 if (/\.(resolves|rejects)\s*;\s*$/.test(line)) {
-                    offenders.push(`${rel}:${i + 1}  ${line.trim()}`);
+                    offenders.push(`${rel}:${i + 1}  discarded matcher: ${trimmed}`);
+                }
+                // (b) a matcher runs but its promise is never awaited, so a
+                // failure surfaces as an unhandled rejection instead of a
+                // failing test. `expect(...)` must be awaited on these chains.
+                if (
+                    /\.(resolves|rejects)\b/.test(line) &&
+                    !/^\s*(await|return|\}|\)|\/\/|\*)/.test(line) &&
+                    !/expect\.(assertions|hasAssertions)/.test(line)
+                ) {
+                    offenders.push(`${rel}:${i + 1}  un-awaited matcher: ${trimmed}`);
                 }
             });
         }

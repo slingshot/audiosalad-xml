@@ -28,8 +28,17 @@ jobs:
         run: bun run typecheck
 
   test:
-    name: Test
+    name: Test (TZ=${{ matrix.tz }})
     runs-on: namespace-profile-default
+    strategy:
+      fail-fast: false
+      matrix:
+        # Date handling reads UTC fields deliberately. Running only under UTC
+        # would make that untestable: a switch to local getters passes in UTC
+        # and fails west of it.
+        tz: [UTC, America/Los_Angeles, Asia/Tokyo]
+    env:
+      TZ: ${{ matrix.tz }}
     steps:
       - uses: actions/checkout@v5
       - uses: oven-sh/setup-bun@v2
