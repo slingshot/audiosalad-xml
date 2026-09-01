@@ -22,16 +22,19 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: oven-sh/setup-bun@v2
+      - uses: jdx/mise-action@v2
         with:
-          bun-version-file: package.json
+          version: 2026.8.16
+          cache: true
 
       # npm's CLI implements provenance attestation, so it is what publishes,
-      # even though bun manages dependencies.
-      - uses: actions/setup-node@v5
-        with:
-          node-version: 22
-          registry-url: https://registry.npmjs.org
+      # even though bun manages dependencies. node comes from mise.toml, not a
+      # second setup action, so the publish runs on the same node as the build.
+      - name: Authenticate to npm
+        run: |
+          echo "//registry.npmjs.org/:_authToken=\${NODE_AUTH_TOKEN}" > ~/.npmrc
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - run: bun install --frozen-lockfile
 

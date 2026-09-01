@@ -20,9 +20,10 @@ jobs:
     runs-on: namespace-profile-default
     steps:
       - uses: actions/checkout@v5
-      - uses: oven-sh/setup-bun@v2
+      - uses: jdx/mise-action@v2
         with:
-          bun-version-file: package.json
+          version: 2026.8.16
+          cache: true
       - run: bun install --frozen-lockfile
       - name: Generate typedoc
         run: bun run docs

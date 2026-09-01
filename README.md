@@ -168,6 +168,16 @@ numeric field whose value is `0` (a separate defect: falsy guards).
 `attr`; `asset/md5_checksum` became optional; `upc_ean` accepts 14 characters;
 and `DJ Mix` joined the release formats.
 
+## Contributing
+
+The toolchain is pinned with [mise](https://mise.jdx.dev):
+
+```sh
+mise install     # pinned bun + node
+mise run setup   # dependencies and git hooks
+mise run ci      # lint, typecheck, tests in three timezones, build, package checks
+```
+
 ## Docs
 
 Full API reference: [slingshot.github.io/audiosalad-xml](https://slingshot.github.io/audiosalad-xml/)

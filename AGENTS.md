@@ -10,8 +10,24 @@ against schema **v3.4** (`schemas/audiosalad_release_v3.4.xsd`). It ships with
 
 ## Commands
 
+The toolchain is pinned in `mise.toml` — bun **and** node. Node matters even
+though bun is the package manager: several dev binaries (tsdown among them) ship
+a `#!/usr/bin/env node` shebang and run under node regardless of `bun run`.
+Leaving it unpinned once made the build depend on whichever node a CI runner
+image happened to ship, which broke config loading in CI while passing locally.
+
+```sh
+mise install     # once — installs the pinned bun and node
+mise run setup   # bun install + git hooks
+mise run ci      # everything CI runs, in one command
+```
+
+CI uses `jdx/mise-action` for the same reason, so a local run and a CI run
+execute against identical versions.
+
 | Command | Purpose |
 |---|---|
+| `mise install` | Install the pinned toolchain |
 | `bun install` | Install dependencies |
 | `bun test` | Run the full suite |
 | `bun run check` | Lint, typecheck, and test — run before pushing |
@@ -20,6 +36,7 @@ against schema **v3.4** (`schemas/audiosalad_release_v3.4.xsd`). It ships with
 | `bun run check:exports` | publint + are-the-types-wrong |
 | `bun run docs` | Generate typedoc into `api-docs/` |
 | `bun run changeset` | Record a release note; required for any user-facing change |
+| `bun run test:tz` | Run the suite under all three CI timezones |
 | `UPDATE_GOLDEN=1 bun test` | Regenerate golden files after an intended change |
 
 ## The one architectural rule
