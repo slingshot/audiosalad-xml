@@ -122,11 +122,15 @@ generated "Version Packages" PR publishes to npm.
 
 These require an owner and are not automatable from a working copy:
 
-1. `NPM_TOKEN` repository secret, with publish rights to the `@ssh` scope.
+1. **npm Trusted Publishing** must be configured for `@ssh/audiosalad-xml`
+   against this repository **and the workflow filename `release.yml`** — npm
+   matches on the exact filename, so renaming the workflow breaks publishing.
+   No `NPM_TOKEN` secret is used or needed; the release job exchanges its
+   `id-token: write` credential for a short-lived publish token and npm
+   attaches provenance automatically. Do not add `--provenance` or
+   `publishConfig.provenance`: under OIDC they are redundant and push npm onto
+   the token-based provenance path.
 2. **Settings → Actions → General** — allow Actions to create and approve pull
    requests, so changesets can open its version PR.
 3. **Settings → Pages** — source set to *GitHub Actions*, since typedoc output
    is no longer committed to `docs/`.
-4. npm provenance requires a public repository. If this repo is private, remove
-   `NPM_CONFIG_PROVENANCE` from `release.yml` and `publishConfig.provenance`
-   from `package.json`.

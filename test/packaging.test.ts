@@ -39,6 +39,33 @@ describe('package manifest', () => {
     test('stays at 0.1.5 until changesets applies the major bump', () => {
         expect(pkg.version).toBe('0.1.5');
     });
+
+    test('leaves provenance to npm Trusted Publishing', () => {
+        // Under OIDC, npm attaches provenance itself. Setting it explicitly is
+        // redundant and pushes npm onto the token-based provenance path, which
+        // has no token to use.
+        expect(pkg.publishConfig).not.toHaveProperty('provenance');
+        expect(pkg.publishConfig.access).toBe('public');
+    });
+});
+
+describe('release workflow', () => {
+    const workflow = () =>
+        Bun.file(new URL('../.github/workflows/release.yml', import.meta.url)).text();
+
+    test('publishes via OIDC, with no npm token anywhere', async () => {
+        const yml = await workflow();
+        // An .npmrc token silently wins over OIDC, so trusted publishing would
+        // never engage and the failure would be invisible until an audit.
+        for (const token of ['NPM_TOKEN', 'NODE_AUTH_TOKEN', '_authToken']) {
+            expect(yml, `${token} would bypass Trusted Publishing`).not.toContain(token);
+        }
+        expect(yml).not.toContain('NPM_CONFIG_PROVENANCE');
+    });
+
+    test('grants the id-token permission OIDC requires', async () => {
+        expect(await workflow()).toContain('id-token: write');
+    });
 });
 
 describe.if(built)('build output', () => {
