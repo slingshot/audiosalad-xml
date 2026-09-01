@@ -56,7 +56,8 @@
         "docs": "typedoc",
         "changeset": "changeset",
         "version": "changeset version",
-        "release": "bun run build && npm publish"
+        "release": "bun run build && npm publish",
+        "prepare": "lefthook install || true"
     },
     "dependencies": {},
     "devDependencies": {
