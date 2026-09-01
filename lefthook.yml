@@ -1,0 +1,19 @@
+pre-commit:
+  parallel: true
+  jobs:
+    - name: biome
+      glob: '*.{ts,js,json,jsonc}'
+      run: bunx biome check --write --no-errors-on-unmatched {staged_files}
+      stage_fixed: true
+
+pre-push:
+  jobs:
+    - name: typecheck
+      run: bun run typecheck
+    - name: test
+      run: bun test
+
+commit-msg:
+  jobs:
+    - name: commitlint
+      run: bunx commitlint --edit {1}

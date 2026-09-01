@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<release xmlns="audiosalad_release_v3.4" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="audiosalad_release_v3.4 https://audiosalad-xsd.s3.amazonaws.com/audiosalad_release_v3.4.xsd">
+    <schema_id>audiosalad_release_v3.4</schema_id>
+    <action>add</action>
+    <upc_ean>12345678901234</upc_ean>
+    <title>Two Discs</title>
+    <display_artist>Someone</display_artist>
+    <release_format>double album</release_format>
+    <track>
+        <disc_number>1</disc_number>
+        <track_number>1</track_number>
+        <title>A1</title>
+        <preview_start>0</preview_start>
+        <display_artist>Someone</display_artist>
+    </track>
+    <track>
+        <disc_number>1</disc_number>
+        <track_number>2</track_number>
+        <title>A2</title>
+        <display_artist>Someone</display_artist>
+    </track>
+    <track>
+        <disc_number>2</disc_number>
+        <track_number>1</track_number>
+        <title>B1</title>
+        <display_artist>Someone</display_artist>
+    </track>
+</release>

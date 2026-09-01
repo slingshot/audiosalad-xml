@@ -1,0 +1,35 @@
+# Pinned toolchain. Everything that can affect a build lives here, so a local
+# run and a CI run execute against identical versions.
+#
+# Why node is pinned even though bun is the package manager: several dev
+# binaries (tsdown among them) ship a `#!/usr/bin/env node` shebang, so they run
+# under node regardless of `bun run`. tsdown loads `tsdown.config.ts` via node's
+# native type stripping, which older node builds lack — leaving node unpinned
+# made the build depend on whichever node a runner image happened to have.
+
+[tools]
+bun = "1.3.14"
+node = "24.19.0"
+
+[env]
+# Keep bun's install deterministic everywhere.
+BUN_INSTALL_CACHE_DIR = "{{config_root}}/.bun/cache"
+
+[tasks.setup]
+description = "Install dependencies and git hooks"
+run = ["bun install", "bun run hooks:install"]
+
+[tasks.check]
+description = "Lint, typecheck, and test — the pre-push gate"
+run = "bun run check"
+
+[tasks.ci]
+description = "Everything CI runs, in one command"
+run = [
+    "bun run lint",
+    "bun run typecheck",
+    "bun run test:tz",
+    "bun run build",
+    "bun run size",
+    "bun run check:exports",
+]

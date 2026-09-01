@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<release xmlns="audiosalad_release_v3.4" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="audiosalad_release_v3.4 https://audiosalad-xsd.s3.amazonaws.com/audiosalad_release_v3.4.xsd">
+    <schema_id>audiosalad_release_v3.4</schema_id>
+    <action>add</action>
+    <title>Minimal</title>
+    <display_artist>Nobody</display_artist>
+    <track>
+        <track_number>1</track_number>
+        <title>Only Track</title>
+        <display_artist>Nobody</display_artist>
+    </track>
+</release>

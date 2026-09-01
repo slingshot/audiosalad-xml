@@ -1,0 +1,97 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Lint and typecheck
+    runs-on: namespace-profile-default
+    steps:
+      - uses: actions/checkout@v5
+      - uses: jdx/mise-action@v2
+        with:
+          version: 2026.8.16
+          cache: true
+      - run: bun install --frozen-lockfile
+      - name: Lint
+        run: bun run lint
+      - name: Typecheck
+        run: bun run typecheck
+
+  test:
+    name: Test (TZ=${{ matrix.tz }})
+    runs-on: namespace-profile-default
+    strategy:
+      fail-fast: false
+      matrix:
+        # Date handling reads UTC fields deliberately. Running only under UTC
+        # would make that untestable: a switch to local getters passes in UTC
+        # and fails west of it.
+        tz: [UTC, America/Los_Angeles, Asia/Tokyo]
+    env:
+      TZ: ${{ matrix.tz }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: jdx/mise-action@v2
+        with:
+          version: 2026.8.16
+          cache: true
+      - run: bun install --frozen-lockfile
+      - name: Test with coverage
+        run: bun test --coverage
+
+  build:
+    name: Build and package checks
+    runs-on: namespace-profile-default
+    steps:
+      - uses: actions/checkout@v5
+      - uses: jdx/mise-action@v2
+        with:
+          version: 2026.8.16
+          cache: true
+      - run: bun install --frozen-lockfile
+      - name: Build
+        run: bun run build
+      - name: Bundle size budget
+        run: bun run size
+      - name: Validate published package
+        run: bun run check:exports
+
+  commits:
+    name: Conventional commits
+    runs-on: namespace-profile-default
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: jdx/mise-action@v2
+        with:
+          version: 2026.8.16
+          cache: true
+      - run: bun install --frozen-lockfile
+      - name: Lint commit messages
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            FROM="${{ github.event.pull_request.base.sha }}"
+            TO="${{ github.event.pull_request.head.sha }}"
+          else
+            # Direct pushes are linted too, so the guarantee does not depend on
+            # branch protection being configured. `before` is all-zeros on the
+            # first push to a new branch; fall back to the single head commit.
+            FROM="${{ github.event.before }}"
+            TO="${{ github.sha }}"
+            if [ "$FROM" = "0000000000000000000000000000000000000000" ]; then
+              FROM="$(git rev-parse "$TO"^ 2>/dev/null || echo "$TO")"
+            fi
+          fi
+          bunx commitlint --from "$FROM" --to "$TO" --verbose
