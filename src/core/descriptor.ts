@@ -84,6 +84,32 @@ const describe = (v: unknown): string => {
 };
 
 /** Formats one scalar value, pushing an issue and returning undefined on failure. */
+/**
+ * Applies the XSD simple-type facets a descriptor declares. Shared by
+ * `buildNode` and `parseNode` so the two directions cannot disagree about what
+ * the schema allows — a facet enforced on the way out but not on the way in
+ * would let `parseRelease` return an object that `buildRelease` then rejects.
+ */
+const checkFacets = <I>(
+    f: FieldDescriptor<I>,
+    value: string,
+    path: string,
+    issues: Issue[],
+): void => {
+    if (f.pattern && !f.pattern.test(value)) {
+        issues.push(issue(path, 'pattern', `"${value}" does not match ${String(f.pattern)}`));
+    }
+    if (f.minLength !== undefined && value.length < f.minLength) {
+        issues.push(issue(path, 'minLength', `must be at least ${f.minLength} characters`));
+    }
+    if (f.maxLength !== undefined && value.length > f.maxLength) {
+        issues.push(issue(path, 'maxLength', `must be at most ${f.maxLength} characters`));
+    }
+    if (f.values && !f.values.includes(value)) {
+        issues.push(issue(path, 'enum', `"${value}" is not one of: ${f.values.join(', ')}`));
+    }
+};
+
 const formatScalar = <I>(
     f: FieldDescriptor<I>,
     raw: unknown,
@@ -161,18 +187,7 @@ const formatScalar = <I>(
         }
     }
 
-    if (f.pattern && !f.pattern.test(out)) {
-        ctx.issues.push(issue(path, 'pattern', `"${out}" does not match ${String(f.pattern)}`));
-    }
-    if (f.minLength !== undefined && out.length < f.minLength) {
-        ctx.issues.push(issue(path, 'minLength', `must be at least ${f.minLength} characters`));
-    }
-    if (f.maxLength !== undefined && out.length > f.maxLength) {
-        ctx.issues.push(issue(path, 'maxLength', `must be at most ${f.maxLength} characters`));
-    }
-    if (f.values && !f.values.includes(out)) {
-        ctx.issues.push(issue(path, 'enum', `"${out}" is not one of: ${f.values.join(', ')}`));
-    }
+    checkFacets(f, out, path, ctx.issues);
 
     return out;
 };
@@ -256,7 +271,12 @@ export const buildNode = <I>(
     return el(elName, children);
 };
 
-/** Reverses the scalar formatting done by `buildNode`, reporting lexical errors. */
+/**
+ * Reverses the scalar formatting done by `buildNode`, reporting both lexical
+ * errors and facet violations. Returns `undefined` when the text cannot be
+ * represented as the declared kind, so the caller omits the key rather than
+ * handing back a value that contradicts its own TypeScript type.
+ */
 const parseScalar = <I>(
     f: FieldDescriptor<I>,
     text: string,
@@ -269,7 +289,14 @@ const parseScalar = <I>(
                 ctx.issues.push(issue(path, 'type', `<${f.el}> must be an integer, got "${text}"`));
                 return undefined;
             }
-            return Number(text);
+            const n = Number(text);
+            if (n > UNSIGNED_INT_MAX) {
+                ctx.issues.push(
+                    issue(path, 'type', `<${f.el}> exceeds the xs:unsignedInt maximum`),
+                );
+                return undefined;
+            }
+            return n;
         }
         case 'boolean': {
             if (!['true', 'false', '1', '0'].includes(text)) {
@@ -278,9 +305,37 @@ const parseScalar = <I>(
             }
             return text === 'true' || text === '1';
         }
-        case 'gYear':
-            return /^\d{4}$/.test(text) ? Number(text) : text;
+        case 'gYear': {
+            // Must not fall through to the raw string: ReleaseInput.cYear is
+            // typed `number`, and returning text here would be an unsound cast.
+            if (formatGYear(text) === undefined) {
+                ctx.issues.push(issue(path, 'type', `<${f.el}> must be a four-digit year`));
+                return undefined;
+            }
+            return Number(text);
+        }
+        case 'date':
+        case 'dateTime':
+        case 'partialDate': {
+            const formatter =
+                f.kind === 'date'
+                    ? formatDate
+                    : f.kind === 'dateTime'
+                      ? formatDateTime
+                      : formatPartialDate;
+            if (formatter(text) === undefined) {
+                ctx.issues.push(
+                    issue(path, 'type', `<${f.el}> is not a valid ${f.kind}: "${text}"`),
+                );
+                return undefined;
+            }
+            checkFacets(f, text, path, ctx.issues);
+            return text;
+        }
         default:
+            // Facets are declared on the table; enforcing them only when
+            // building would let parseRelease accept XML the XSD rejects.
+            checkFacets(f, text, path, ctx.issues);
             return text;
     }
 };

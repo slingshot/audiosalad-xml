@@ -140,3 +140,84 @@ describe('parseRelease', () => {
         ).toThrow(AudioSaladValidationError);
     });
 });
+
+describe('parseRelease enforces facets, not just structure', () => {
+    // Facets were declared on the descriptor tables but applied only when
+    // building, so parseRelease accepted documents the XSD rejects — and the
+    // API contradicted itself: parse succeeded, then build on its own output
+    // threw. Golden round-trips cannot catch this, since they only ever parse
+    // XML that buildRelease already validated.
+    const withTrackChild = (el: string, text: string): string =>
+        buildRelease(minimal).replace(
+            '<track_number>1</track_number>',
+            `<${el}>${text}</${el}>\n        <track_number>1</track_number>`,
+        );
+
+    // Insertion points must respect XSD sequence order, or parseRelease rejects
+    // the document for being out of order and the test passes without ever
+    // exercising the facet it names.
+    const afterAction = (el: string, text: string): string =>
+        buildRelease(minimal).replace(
+            '<action>add</action>',
+            `<action>add</action>\n    <${el}>${text}</${el}>`,
+        );
+
+    const beforeTrack = (el: string, text: string): string =>
+        buildRelease(minimal).replace('<track>', `<${el}>${text}</${el}>\n    <track>`);
+
+    test('the insertion helpers produce structurally valid documents', () => {
+        // Otherwise every test below would pass on an ordering error instead of
+        // the facet violation it claims to test.
+        expect(() => parseRelease(afterAction('upc_ean', '123456789012'))).not.toThrow();
+        expect(() => parseRelease(beforeTrack('recording_location', 'US'))).not.toThrow();
+        expect(() => parseRelease(beforeTrack('release_format', 'single'))).not.toThrow();
+        expect(() => parseRelease(beforeTrack('c_year', '2020'))).not.toThrow();
+        expect(() => parseRelease(withTrackChild('isrc', 'QM7G92017457'))).not.toThrow();
+    });
+
+    test('rejects an ISRC that violates its pattern', () => {
+        expect(() => parseRelease(withTrackChild('isrc', 'NOT-AN-ISRC'))).toThrow(
+            AudioSaladValidationError,
+        );
+    });
+
+    test('rejects an action outside the enumeration', () => {
+        const xml = buildRelease(minimal).replace(
+            '<action>add</action>',
+            '<action>frobnicate</action>',
+        );
+        expect(() => parseRelease(xml)).toThrow(AudioSaladValidationError);
+    });
+
+    test('rejects a non-numeric upc_ean', () => {
+        expect(() => parseRelease(afterAction('upc_ean', 'ABCDEFGHIJKL'))).toThrow(
+            AudioSaladValidationError,
+        );
+    });
+
+    test('rejects a three-letter recording_location', () => {
+        expect(() => parseRelease(beforeTrack('recording_location', 'USA'))).toThrow(
+            AudioSaladValidationError,
+        );
+    });
+
+    test('rejects a release_format outside the enumeration', () => {
+        expect(() => parseRelease(beforeTrack('release_format', 'Mixtape'))).toThrow(
+            AudioSaladValidationError,
+        );
+    });
+
+    test('rejects a c_year that is not a four-digit year', () => {
+        // Previously returned the raw string, so ReleaseInput.cYear — typed
+        // `number` — came back holding "not-a-year".
+        expect(() => parseRelease(beforeTrack('c_year', 'not-a-year'))).toThrow(
+            AudioSaladValidationError,
+        );
+    });
+
+    test('what parseRelease accepts, buildRelease can always re-emit', () => {
+        // The self-consistency property the missing facet checks broke.
+        const xml = buildRelease(minimal);
+        expect(() => buildRelease(parseRelease(xml))).not.toThrow();
+    });
+});
