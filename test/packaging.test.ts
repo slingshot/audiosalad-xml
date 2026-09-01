@@ -36,8 +36,21 @@ describe('package manifest', () => {
         expect(root.require.types).toBe('./dist/index.d.cts');
     });
 
-    test('stays at 0.1.5 until changesets applies the major bump', () => {
-        expect(pkg.version).toBe('0.1.5');
+    test('version is managed by changesets, not hand-edited', async () => {
+        // An earlier version of this test asserted `version === '0.1.5'`, which
+        // was right before the first release and then blocked every release
+        // after it — changesets bumping the version is the intended behaviour.
+        // Assert the durable property instead: package.json and the CHANGELOG
+        // move together, which is true after `changeset version` and false if
+        // someone edits the version by hand.
+        expect(pkg.version).toMatch(/^\d+\.\d+\.\d+(?:-[\w.]+)?$/);
+
+        const changelog = await Bun.file(new URL('../CHANGELOG.md', import.meta.url)).text();
+        const latest = /^## (\S+)/m.exec(changelog)?.[1];
+        if (latest === undefined) {
+            throw new Error('CHANGELOG.md has no `## <version>` heading to compare against');
+        }
+        expect(pkg.version, 'package.json and CHANGELOG.md disagree').toBe(latest);
     });
 
     test('leaves provenance to npm Trusted Publishing', () => {
