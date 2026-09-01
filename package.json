@@ -1,6 +1,6 @@
 {
     "name": "@ssh/audiosalad-xml",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "Build, validate, and parse AudioSalad release XML (spec v3.4) from TypeScript.",
     "license": "MIT",
     "author": "Sanil Chawla",
