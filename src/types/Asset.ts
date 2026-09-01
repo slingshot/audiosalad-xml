@@ -1,7 +1,7 @@
 import xmlEscape from 'xml-escape';
-import { Attr } from './Attr';
-import { AudioSaladXML } from './AudioSaladXML';
 import { formatXml } from '../formatter';
+import type { Attr } from './Attr';
+import type { AudioSaladXML } from './AudioSaladXML';
 
 /**
  * Encapsulates a file asset, e.g. an audio recording, artwork image, etc; maps to `asset_type`

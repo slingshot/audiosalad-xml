@@ -1,14 +1,14 @@
 import xmlEscape from 'xml-escape';
-import { Participant } from './Participant';
-import { GenreType } from './GenreType';
-import { Text } from './Text';
-import { PriceTier } from './PriceTier';
-import { Permission } from './Permission';
-import { Territory } from './Territory';
-import { Asset } from './Asset';
-import { Attr } from './Attr';
-import { AudioSaladXML } from './AudioSaladXML';
 import { formatXml } from '../formatter';
+import type { Asset } from './Asset';
+import type { Attr } from './Attr';
+import type { AudioSaladXML } from './AudioSaladXML';
+import type { GenreType } from './GenreType';
+import type { Participant } from './Participant';
+import type { Permission } from './Permission';
+import type { PriceTier } from './PriceTier';
+import type { Territory } from './Territory';
+import type { Text } from './Text';
 
 /**
  * Describes a single track within a release; maps to `track_type`

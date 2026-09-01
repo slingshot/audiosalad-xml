@@ -1,7 +1,7 @@
 import xmlEscape from 'xml-escape';
-import { Action } from './Action.enum';
-import { AudioSaladXML } from './AudioSaladXML';
 import { formatXml } from '../formatter';
+import { Action } from './Action.enum';
+import type { AudioSaladXML } from './AudioSaladXML';
 
 /**
  * Defines a delivery to a set of DSPs; maps to `dsp_delivery_type`

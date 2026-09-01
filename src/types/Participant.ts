@@ -1,8 +1,8 @@
 import xmlEscape from 'xml-escape';
-import { ParticipantRole } from './ParticipantRole.enum';
-import { ProprietaryID } from './ProprietaryID';
-import { AudioSaladXML } from './AudioSaladXML';
 import { formatXml } from '../formatter';
+import type { AudioSaladXML } from './AudioSaladXML';
+import { ParticipantRole } from './ParticipantRole.enum';
+import type { ProprietaryID } from './ProprietaryID';
 
 /**
  * Describes a participant who has been involved in a recording or a release. Maps to

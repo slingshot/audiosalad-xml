@@ -1,7 +1,7 @@
 import xmlEscape from 'xml-escape';
-import { CountryName } from './Country.enum';
-import { AudioSaladXML } from './AudioSaladXML';
 import { formatXml } from '../formatter';
+import type { AudioSaladXML } from './AudioSaladXML';
+import type { CountryName } from './Country.enum';
 
 /**
  * Describes the record label that has produced a given release, the name being the only

@@ -1,25 +1,25 @@
 import xmlEscape from 'xml-escape';
-import { Participant } from './Participant';
-import { ReleaseFormat } from './ReleaseFormat.enum';
+import { formatXml } from '../formatter';
+import { Action } from './Action.enum';
+import { Asset } from './Asset';
+import { Attr } from './Attr';
+import { AttributeType } from './Attr.enum';
+import type { AudioSaladXML } from './AudioSaladXML';
 import { CountryCode, CountryName } from './Country.enum';
+import { Delivery } from './Delivery';
+import { Genre, SubGenre } from './Genre.enum';
 import { GenreType } from './GenreType';
 import { Label } from './Label';
-import { PriceTier } from './PriceTier';
-import { Permission } from './Permission';
-import { Territory } from './Territory';
-import { Asset } from './Asset';
-import { Track } from './Track';
-import { Action } from './Action.enum';
-import { Delivery } from './Delivery';
-import { Attr } from './Attr';
-import { AudioSaladXML } from './AudioSaladXML';
-import { Text } from './Text';
+import { Participant } from './Participant';
 import { ParticipantRole } from './ParticipantRole.enum';
-import { Genre, SubGenre } from './Genre.enum';
-import { ReleaseTextType, TrackTextType } from './Text.enum';
+import { Permission } from './Permission';
+import { PriceTier } from './PriceTier';
 import { iTunesPriceTier } from './PriceTier.enum';
-import { AttributeType } from './Attr.enum';
-import { formatXml } from '../formatter';
+import { ReleaseFormat } from './ReleaseFormat.enum';
+import { Territory } from './Territory';
+import { Text } from './Text';
+import { ReleaseTextType, TrackTextType } from './Text.enum';
+import { Track } from './Track';
 
 export class Release {
     /**

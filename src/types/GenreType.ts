@@ -1,7 +1,7 @@
 import xmlEscape from 'xml-escape';
-import { Genre, SubGenre } from './Genre.enum';
-import { AudioSaladXML } from './AudioSaladXML';
 import { formatXml } from '../formatter';
+import type { AudioSaladXML } from './AudioSaladXML';
+import type { Genre, SubGenre } from './Genre.enum';
 
 /**
  * The genre of a release/recording, including up to two levels of detail; maps to `genre_type`

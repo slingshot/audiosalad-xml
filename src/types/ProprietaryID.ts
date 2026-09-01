@@ -1,6 +1,6 @@
 import xmlEscape from 'xml-escape';
-import { AudioSaladXML } from './AudioSaladXML';
 import { formatXml } from '../formatter';
+import type { AudioSaladXML } from './AudioSaladXML';
 
 /**
  * Represents a proprietary participant ID, e.g. for Spotify or Apple artist IDs.

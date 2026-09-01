@@ -1,7 +1,7 @@
 import xmlEscape from 'xml-escape';
-import { AttributeType } from './Attr.enum';
-import { AudioSaladXML } from './AudioSaladXML';
 import { formatXml } from '../formatter';
+import type { AttributeType } from './Attr.enum';
+import type { AudioSaladXML } from './AudioSaladXML';
 
 /**
  * Encapsulates a generic key/value pair attribute; maps to attr_type

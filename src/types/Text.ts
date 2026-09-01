@@ -1,7 +1,7 @@
 import xmlEscape from 'xml-escape';
-import { ReleaseTextType, TrackTextType } from './Text.enum';
-import { AudioSaladXML } from './AudioSaladXML';
 import { formatXml } from '../formatter';
+import type { AudioSaladXML } from './AudioSaladXML';
+import type { ReleaseTextType, TrackTextType } from './Text.enum';
 
 /**
  * Encapsulates a piece of textual information. Applies for both release level and track level;

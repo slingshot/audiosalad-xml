@@ -1,8 +1,8 @@
 import xmlEscape from 'xml-escape';
-import { CountryCode } from './Country.enum';
-import { Permission } from './Permission';
-import { AudioSaladXML } from './AudioSaladXML';
 import { formatXml } from '../formatter';
+import type { AudioSaladXML } from './AudioSaladXML';
+import { CountryCode } from './Country.enum';
+import type { Permission } from './Permission';
 
 /**
  * Encapsulates a release's or track's presence within a given country; maps to `territory_type`
