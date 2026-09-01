@@ -76,14 +76,20 @@ inexpressible in spec code, but they remain easy to reintroduce elsewhere.
 
 ## Tests
 
-Four layers, all under `test/`:
+Six groups, all under `test/`:
 
 - **unit** (`test/core/`, `test/spec/`) — the kernel and each table
 - **golden** (`test/golden.test.ts`) — fixtures serialized to committed XML and
   validated against the XSD with `xmllint-wasm`
 - **property** (`test/property.test.ts`) — `build(parse(build(x))) === build(x)`
   over generated inputs, plus XSD validation of each
-- **regression** (`test/regressions.test.ts`) — one named test per 0.1.x defect
+- **regression** (`test/regressions.test.ts`) — one named test per 0.1.x defect,
+  plus a guard that scans every test file for the discarded-matcher and
+  un-awaited-matcher patterns that let 0.1.x ship a suite asserting nothing
+- **surface** (`test/api.test.ts`, `test/legacy.test.ts`, `test/smoke.test.ts`) —
+  the public API, the class facade, and the barrel-loading guard tied to trap #4
+- **packaging** (`test/packaging.test.ts`) — manifest and build-output invariants:
+  zero runtime deps, no install lifecycle script, no dangling sourcemap reference
 
 Add a regression test whenever you fix a bug, and name the defect in it.
 

@@ -56,8 +56,10 @@ describe.if(built)('build output', () => {
         const files = readdirSync(DIST);
         for (const name of files.filter((f) => f.endsWith('.js') || f.endsWith('.cjs'))) {
             const text = await Bun.file(new URL(name, DIST)).text();
-            const ref = /\/\/# sourceMappingURL=(\S+)/.exec(text);
-            if (ref) expect(files, `${name} references ${ref[1]}`).toContain(ref[1]);
+            const mapName = /\/\/# sourceMappingURL=(\S+)/.exec(text)?.[1];
+            if (mapName !== undefined) {
+                expect(files, `${name} references ${mapName}`).toContain(mapName);
+            }
         }
     });
 });
