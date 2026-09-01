@@ -1,3 +1,7 @@
+export type { BuildOptions, ParseOptions } from './api';
+export { AudioSaladValidationError, buildRelease, parseRelease, validateRelease } from './api';
+export type { Issue, IssueCode } from './core/issues';
+
 import { Action } from './enums/action';
 import { CountryCode, CountryName } from './enums/country';
 import { Genre, SubGenre } from './enums/genre';
