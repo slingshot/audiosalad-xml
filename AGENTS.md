@@ -122,6 +122,11 @@ generated "Version Packages" PR publishes to npm.
 
 These require an owner and are not automatable from a working copy:
 
+0. **The release job runs on `ubuntu-latest`, not a Namespace runner.** npm
+   refuses to verify a provenance bundle built on a self-hosted runner, and
+   Trusted Publishing always attaches provenance. Namespace runners register as
+   self-hosted. Every other job uses `namespace-profile-default`; do not
+   "consistency-fix" this one. `test/packaging.test.ts` guards it.
 1. **npm Trusted Publishing** must be configured for `@ssh/audiosalad-xml`
    against this repository **and the workflow filename `release.yml`** — npm
    matches on the exact filename, so renaming the workflow breaks publishing.
