@@ -1,7 +1,7 @@
 import xmlEscape from 'xml-escape';
+import type { CountryCode } from '../enums/country';
 import { formatXml } from '../formatter';
 import type { AudioSaladXML } from './AudioSaladXML';
-import type { CountryCode } from './Country.enum';
 
 /**
  * A date and region-bounded distribution permissions; maps to `permission_type`

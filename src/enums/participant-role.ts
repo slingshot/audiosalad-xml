@@ -20,6 +20,9 @@ export enum ParticipantRole {
     Orchestra = 'Orchestra',
     Ensemble = 'Ensemble',
     Lyricist = 'Lyricist',
+    PrimaryArtist = 'Primary Artist',
+    Publisher = 'Publisher',
+    /** @deprecated Appears to be a typo for {@link ParticipantRole.Publisher}. */
     Publicist = 'Publicist',
     Other = 'Other',
 }

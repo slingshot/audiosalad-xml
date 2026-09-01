@@ -1,7 +1,7 @@
 import xmlEscape from 'xml-escape';
+import type { iTunesPriceTier } from '../enums/price-tier';
 import { formatXml } from '../formatter';
 import type { AudioSaladXML } from './AudioSaladXML';
-import type { iTunesPriceTier } from './PriceTier.enum';
 
 /**
  * A pricing tier identifier as applies to a download platform; maps to `price_tier_type`

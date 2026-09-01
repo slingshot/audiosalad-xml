@@ -1,6 +1,6 @@
 import xmlEscape from 'xml-escape';
+import type { AttributeType } from '../enums/attr';
 import { formatXml } from '../formatter';
-import type { AttributeType } from './Attr.enum';
 import type { AudioSaladXML } from './AudioSaladXML';
 
 /**

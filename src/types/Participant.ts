@@ -1,7 +1,7 @@
 import xmlEscape from 'xml-escape';
+import { ParticipantRole } from '../enums/participant-role';
 import { formatXml } from '../formatter';
 import type { AudioSaladXML } from './AudioSaladXML';
-import { ParticipantRole } from './ParticipantRole.enum';
 import type { ProprietaryID } from './ProprietaryID';
 
 /**

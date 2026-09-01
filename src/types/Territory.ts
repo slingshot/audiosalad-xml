@@ -1,7 +1,7 @@
 import xmlEscape from 'xml-escape';
+import { CountryCode } from '../enums/country';
 import { formatXml } from '../formatter';
 import type { AudioSaladXML } from './AudioSaladXML';
-import { CountryCode } from './Country.enum';
 import type { Permission } from './Permission';
 
 /**

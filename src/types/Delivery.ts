@@ -1,6 +1,6 @@
 import xmlEscape from 'xml-escape';
+import { Action } from '../enums/action';
 import { formatXml } from '../formatter';
-import { Action } from './Action.enum';
 import type { AudioSaladXML } from './AudioSaladXML';
 
 /**
