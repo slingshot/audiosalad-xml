@@ -22,6 +22,20 @@
 - Repeated children are always produced by the descriptor kernel, **never** by hand-written `.map()`/`.forEach()` in a type module (defects 1–3).
 - All `Date` values serialize in **UTC**, always.
 
+## Pre-verification
+
+The riskiest code in this plan was extracted and executed before the plan was
+finalized, so an implementer is not the first person to run it:
+
+| Verified | Result |
+|---|---|
+| `xmllint-wasm` 5.3.0 under `bun test` | Works. `errors` interleaves libxml warnings and caret context lines, so the helper filters on `/Schemas validity error/`. |
+| A v3.4-shaped document against the real v3.4 XSD | Validates — including a 14-digit `upc_ean`, `dj mix`, an asset with no `md5_checksum`, `preview_start` of 0, and a `permission` with two `type` elements plus `attr`. `dsp_delivery` is correctly *rejected*, confirming its removal. |
+| `src/core/parse.ts` against its 16 tests plus 16 adversarial inputs | Passed after three defects were found and fixed. See the note in Task 4. |
+| `src/core/descriptor.ts`, `serialize.ts`, `datetime.ts` against their tests | 56/56 pass. |
+| All core modules under the strict `tsconfig.json` in Task 1 | `tsc --noEmit` clean, including `noUncheckedIndexedAccess` and `verbatimModuleSyntax`. |
+| The `facade()` class factory and `class Release extends ReleaseBase` | Runtime and `tsc` both clean; `InstanceType<typeof Attr> & AttrInput` gives callers typed field access. |
+
 ## Defect index (referenced by task)
 
 | # | Defect | Fixed in |
@@ -936,61 +950,62 @@ Expected: FAIL — module not found.
 
 - [ ] **Step 3: Implement `src/core/parse.ts`**
 
+> This implementation was extracted and run against the tests above plus a set
+> of adversarial inputs before the plan was finalized. Three defects found that
+> way are already fixed here: a quote-aware tag-end scan (`>` is legal
+> *unescaped* inside an XML attribute value, so `indexOf('>')` can land inside
+> quotes), a range check on character references (so a bad `&#x110000;` raises
+> `SyntaxError` rather than `RangeError`), and a trailing-text check at
+> end-of-input (text after the root element was silently dropped).
+
 ```ts
 import type { XmlElement } from './node';
 
-const ENTITIES: Record<string, string> = {
-    amp: '&',
-    lt: '<',
-    gt: '>',
-    quot: '"',
-    apos: "'",
-};
+const ENTITIES: Record<string, string> = { amp:'&', lt:'<', gt:'>', quot:'"', apos:"'" };
 
 const decodeEntities = (s: string): string =>
     s.replace(/&(#x[0-9a-fA-F]+|#\d+|[a-zA-Z]+);/g, (whole, body: string) => {
-        if (body.startsWith('#x')) return String.fromCodePoint(Number.parseInt(body.slice(2), 16));
-        if (body.startsWith('#')) return String.fromCodePoint(Number.parseInt(body.slice(1), 10));
+        if (body.startsWith('#')) {
+            const cp = body.startsWith('#x')
+                ? Number.parseInt(body.slice(2), 16)
+                : Number.parseInt(body.slice(1), 10);
+            if (!Number.isFinite(cp) || cp < 0 || cp > 0x10ffff) {
+                throw new SyntaxError(`character reference &${body}; is out of range`);
+            }
+            return String.fromCodePoint(cp);
+        }
         return ENTITIES[body] ?? whole;
     });
 
-/** AudioSalad uses a single default namespace; prefixes carry no information here. */
 const stripPrefix = (name: string): string => {
     const i = name.indexOf(':');
     return i === -1 ? name : name.slice(i + 1);
 };
 
-interface Frame {
-    name: string;
-    attrs: Array<readonly [string, string]>;
-    children: XmlElement[];
-    text: string;
-}
+interface Frame { name: string; attrs: Array<readonly [string,string]>; children: XmlElement[]; text: string; }
 
-/**
- * Parses AudioSalad-shaped XML into an element tree. Supports elements,
- * attributes, text, CDATA, comments, processing instructions, the five
- * predefined entities, and numeric character references.
- *
- * @throws {SyntaxError} when the document is malformed.
- */
+/** Finds the '>' closing a tag, skipping any inside quoted attribute values. */
+const findTagEnd = (source: string, from: number): number => {
+    let quote: string | undefined;
+    for (let j = from; j < source.length; j += 1) {
+        const ch = source[j];
+        if (quote !== undefined) { if (ch === quote) quote = undefined; continue; }
+        if (ch === '"' || ch === "'") { quote = ch; continue; }
+        if (ch === '>') return j;
+    }
+    return -1;
+};
+
 export const parseXml = (source: string): XmlElement => {
     const stack: Frame[] = [];
     let root: XmlElement | undefined;
     let i = 0;
-
-    const fail = (msg: string): never => {
-        throw new SyntaxError(`${msg} at offset ${i}`);
-    };
-
+    const fail = (msg: string): never => { throw new SyntaxError(`${msg} at offset ${i}`); };
     const finish = (frame: Frame): XmlElement => {
-        // An element has children or text, never both. Whitespace-only text
-        // beside element children is layout, not content.
         const text = frame.children.length > 0 ? undefined : decodeEntities(frame.text);
-        const node: XmlElement =
-            text === undefined
-                ? { name: frame.name, attrs: frame.attrs, children: frame.children }
-                : { name: frame.name, attrs: frame.attrs, children: [], text };
+        const node: XmlElement = text === undefined
+            ? { name: frame.name, attrs: frame.attrs, children: frame.children }
+            : { name: frame.name, attrs: frame.attrs, children: [], text };
         const parent = stack[stack.length - 1];
         if (parent) parent.children.push(node);
         else if (root) fail('multiple root elements');
@@ -1001,7 +1016,9 @@ export const parseXml = (source: string): XmlElement => {
     while (i < source.length) {
         const lt = source.indexOf('<', i);
         if (lt === -1) {
-            if (stack.length > 0) stack[stack.length - 1]!.text += source.slice(i);
+            const tail = source.slice(i);
+            if (stack.length > 0) stack[stack.length - 1]!.text += tail;
+            else if (tail.trim() !== '') fail('text outside the root element');
             break;
         }
         if (lt > i) {
@@ -1011,87 +1028,45 @@ export const parseXml = (source: string): XmlElement => {
             else if (chunk.trim() !== '') fail('text outside the root element');
         }
         i = lt;
-
         if (source.startsWith('<!--', i)) {
             const end = source.indexOf('-->', i);
             if (end === -1) fail('unterminated comment');
-            i = end + 3;
-            continue;
+            i = end + 3; continue;
         }
         if (source.startsWith('<![CDATA[', i)) {
             const end = source.indexOf(']]>', i);
             if (end === -1) fail('unterminated CDATA section');
             const top = stack[stack.length - 1];
             if (!top) fail('CDATA outside the root element');
-            // CDATA is verbatim, so it must bypass entity decoding. Re-escaping
-            // the ampersands keeps decodeEntities idempotent over the whole run.
-            top.text += source.slice(i + 9, end).replaceAll('&', '&amp;');
-            i = end + 3;
-            continue;
+            top!.text += source.slice(i + 9, end).replaceAll('&', '&amp;');
+            i = end + 3; continue;
         }
         if (source.startsWith('<?', i)) {
             const end = source.indexOf('?>', i);
             if (end === -1) fail('unterminated processing instruction');
-            i = end + 2;
-            continue;
+            i = end + 2; continue;
         }
         if (source.startsWith('<!', i)) {
             const end = source.indexOf('>', i);
             if (end === -1) fail('unterminated declaration');
-            i = end + 1;
-            continue;
+            i = end + 1; continue;
         }
-
-        const gt = source.indexOf('>', i);
+        const gt = findTagEnd(source, i);
         if (gt === -1) fail('unterminated tag');
-
         if (source[i + 1] === '/') {
             const name = stripPrefix(source.slice(i + 2, gt).trim());
             const frame = stack.pop();
             if (!frame) fail(`unexpected closing tag </${name}>`);
             if (frame!.name !== name) fail(`expected </${frame!.name}> but found </${name}>`);
             finish(frame!);
-            i = gt + 1;
-            continue;
+            i = gt + 1; continue;
         }
-
         const selfClosing = source[gt - 1] === '/';
         const body = source.slice(i + 1, selfClosing ? gt - 1 : gt).trim();
         const spaceAt = body.search(/\s/);
         const rawName = spaceAt === -1 ? body : body.slice(0, spaceAt);
         if (rawName === '') fail('empty tag name');
-
-        const attrs: Array<readonly [string, string]> = [];
-        if (spaceAt !== -1) {
-            const attrRe = /([^\s=]+)\s*=\s*("([^"]*)"|'([^']*)')/g;
-            let m: RegExpExecArray | null = attrRe.exec(body.slice(spaceAt));
-            while (m !== null) {
-                attrs.push([m[1]!, decodeEntities(m[3] ?? m[4] ?? '')]);
-                m = attrRe.exec(body.slice(spaceAt));
-            }
-        }
-
-        const frame: Frame = { name: stripPrefix(rawName), attrs, children: [], text: '' };
-        if (selfClosing) finish(frame);
-        else stack.push(frame);
-        i = gt + 1;
-    }
-
-    if (stack.length > 0) throw new SyntaxError(`unclosed element <${stack[stack.length - 1]!.name}>`);
-    if (!root) throw new SyntaxError('no root element found');
-    return root;
-};
-```
-
-> The attribute loop re-slices `body` on each iteration, which resets `lastIndex`. Hoist the slice into a local before the loop when implementing:
-> `const attrSource = body.slice(spaceAt);` then `attrRe.exec(attrSource)` both times.
-
-- [ ] **Step 4: Apply the attribute-loop fix noted above**
-
-Replace the attribute block with:
-
-```ts
-        const attrs: Array<readonly [string, string]> = [];
+        const attrs: Array<readonly [string,string]> = [];
         if (spaceAt !== -1) {
             const attrSource = body.slice(spaceAt);
             const attrRe = /([^\s=]+)\s*=\s*("([^"]*)"|'([^']*)')/g;
@@ -1101,7 +1076,62 @@ Replace the attribute block with:
                 m = attrRe.exec(attrSource);
             }
         }
+        const frame: Frame = { name: stripPrefix(rawName), attrs, children: [], text: '' };
+        if (selfClosing) finish(frame); else stack.push(frame);
+        i = gt + 1;
+    }
+    if (stack.length > 0) throw new SyntaxError(`unclosed element <${stack[stack.length-1]!.name}>`);
+    if (!root) throw new SyntaxError('no root element found');
+    return root;
+};
 ```
+
+- [ ] **Step 4: Add the adversarial tests**
+
+Append to `test/core/parse.test.ts`:
+
+```ts
+describe('parseXml hardening', () => {
+    test('accepts an unescaped > inside an attribute value', () => {
+        // XML does not require > to be escaped in attribute values.
+        expect(parseXml('<a x="p>q"/>').attrs).toEqual([['x', 'p>q']]);
+    });
+
+    test('accepts a /> sequence inside an attribute value', () => {
+        const r = parseXml('<a x="p/>q">text</a>');
+        expect(r.attrs).toEqual([['x', 'p/>q']]);
+        expect(r.text).toBe('text');
+    });
+
+    test('throws SyntaxError on an out-of-range character reference', () => {
+        expect(() => parseXml('<a>&#x110000;</a>')).toThrow(SyntaxError);
+    });
+
+    test('throws on text trailing the root element', () => {
+        expect(() => parseXml('<a/>trailing')).toThrow(SyntaxError);
+    });
+
+    test('leaves an unknown entity untouched', () => {
+        expect(parseXml('<a>&nbsp;</a>').text).toBe('&nbsp;');
+    });
+
+    test('does not confuse a ]] inside CDATA for its terminator', () => {
+        expect(parseXml('<a><![CDATA[a]]b]]></a>').text).toBe('a]]b');
+    });
+
+    test('skips a doctype declaration', () => {
+        expect(parseXml('<!DOCTYPE a><a>x</a>').text).toBe('x');
+    });
+
+    test('handles identically named nesting', () => {
+        expect(parseXml('<a><a><a>x</a></a></a>').children[0]?.children[0]?.text).toBe('x');
+    });
+});
+```
+
+> **Known limitation, by design.** Mixed content (`<a>text<b/>more</a>`) keeps
+> the element children and discards the interleaved text. AudioSalad's content
+> model is element-only, so this cannot arise in a valid document.
 
 - [ ] **Step 5: Run the tests to verify they pass**
 
@@ -1109,7 +1139,7 @@ Replace the attribute block with:
 bun test test/core/parse.test.ts
 ```
 
-Expected: PASS, 16 tests.
+Expected: PASS, 24 tests.
 
 - [ ] **Step 6: Commit**
 
