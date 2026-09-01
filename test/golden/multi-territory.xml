@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<release xmlns="audiosalad_release_v3.4" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="audiosalad_release_v3.4 https://audiosalad-xsd.s3.amazonaws.com/audiosalad_release_v3.4.xsd">
+    <schema_id>audiosalad_release_v3.4</schema_id>
+    <action>full-update</action>
+    <title>Wide Release</title>
+    <display_artist>Someone</display_artist>
+    <permission>
+        <type>preorder</type>
+        <enabled>true</enabled>
+        <country_code>US</country_code>
+        <country_code>CA</country_code>
+    </permission>
+    <territory>
+        <country_code>US</country_code>
+        <country_code>CA</country_code>
+        <release_date>2020-05-02T00:00:00Z</release_date>
+    </territory>
+    <territory>
+        <country_code>JP</country_code>
+        <release_date>2020-05-09T00:00:00Z</release_date>
+        <permission>
+            <type>stream</type>
+            <type>download</type>
+            <enabled>true</enabled>
+        </permission>
+    </territory>
+    <track>
+        <track_number>1</track_number>
+        <title>T</title>
+        <display_artist>Someone</display_artist>
+    </track>
+</release>

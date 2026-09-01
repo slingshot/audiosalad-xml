@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<release xmlns="audiosalad_release_v3.4" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="audiosalad_release_v3.4 https://audiosalad-xsd.s3.amazonaws.com/audiosalad_release_v3.4.xsd">
+    <schema_id>audiosalad_release_v3.4</schema_id>
+    <action>update</action>
+    <title>勝訴ストリップ</title>
+    <metadata_language>Japanese</metadata_language>
+    <display_artist>椎名林檎</display_artist>
+    <notes>Emoji 🎵, accents é, quote &quot;x&quot; &amp; ampersand &lt;tag&gt;</notes>
+    <text>
+        <type>Liner Notes</type>
+        <language>Japanese</language>
+        <content>line one
+line two
+	indented</content>
+    </text>
+    <track>
+        <track_number>1</track_number>
+        <title>正しい街</title>
+        <display_artist>椎名林檎</display_artist>
+        <text>
+            <type>Lyrics</type>
+            <content>It&apos;s &lt;b&gt;bold&lt;/b&gt; &amp; &quot;quoted&quot;</content>
+        </text>
+    </track>
+</release>
