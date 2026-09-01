@@ -16,7 +16,15 @@ permissions:
 jobs:
   release:
     name: Version or publish
-    runs-on: namespace-profile-default
+    # NOT namespace-profile-default, unlike every other job in this repo.
+    # npm rejects a provenance bundle built on a self-hosted runner:
+    #   "Unsupported GitHub Actions runner environment: self-hosted.
+    #    Only github-hosted runners are supported when publishing with
+    #    provenance."
+    # Namespace runners register as self-hosted, and Trusted Publishing always
+    # attaches provenance, so this job must run on a GitHub-hosted runner.
+    # The toolchain still comes from mise.toml, so it matches CI exactly.
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
         with:

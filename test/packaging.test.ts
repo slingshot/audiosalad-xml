@@ -79,6 +79,18 @@ describe('release workflow', () => {
     test('grants the id-token permission OIDC requires', async () => {
         expect(await workflow()).toContain('id-token: write');
     });
+
+    test('publishes from a GitHub-hosted runner', async () => {
+        // npm refuses to verify a provenance bundle built on a self-hosted
+        // runner, and Trusted Publishing always attaches provenance. Namespace
+        // runners register as self-hosted, so the release job — alone among
+        // this repo's jobs — must not use one.
+        const yml = await workflow();
+        expect(yml, 'the release job must not use a self-hosted runner').not.toContain(
+            'runs-on: namespace-',
+        );
+        expect(yml).toContain('runs-on: ubuntu-latest');
+    });
 });
 
 describe.if(built)('build output', () => {
