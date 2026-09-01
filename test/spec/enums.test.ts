@@ -9,7 +9,7 @@ describe('ReleaseFormat', () => {
         }
     });
     test('exposes the v3.4 DJ Mix format', () => {
-        expect(ReleaseFormat.DJMix).toBe('dj mix');
+        expect<string>(ReleaseFormat.DJMix).toBe('dj mix');
     });
     test('keeps the misspelled 0.1.x alias working', () => {
         expect(ReleaseFormat.ClassicAlbum).toBe(ReleaseFormat.ClassicalAlbum);
@@ -18,7 +18,7 @@ describe('ReleaseFormat', () => {
 
 describe('ParticipantRole', () => {
     test('adds the roles the XSD documents', () => {
-        expect(ParticipantRole.PrimaryArtist).toBe('Primary Artist');
-        expect(ParticipantRole.Publisher).toBe('Publisher');
+        expect<string>(ParticipantRole.PrimaryArtist).toBe('Primary Artist');
+        expect<string>(ParticipantRole.Publisher).toBe('Publisher');
     });
 });

@@ -25,7 +25,7 @@ const render = <I>(type: Parameters<typeof buildNode<I>>[0], input: I, el: strin
 
 describe('TRACK', () => {
     test('requires track_number, title, and display_artist', () => {
-        expect(render(TRACK, {}, 'track').issues.map((i) => i.path)).toEqual([
+        expect(render(TRACK, {} as never, 'track').issues.map((i) => i.path)).toEqual([
             'trackNumber',
             'title',
             'displayArtist',
@@ -171,7 +171,7 @@ describe('RELEASE', () => {
     });
 
     test('requires action, title, and display_artist', () => {
-        const { issues } = render(RELEASE, { tracks: minimal.tracks }, 'release');
+        const { issues } = render(RELEASE, { tracks: minimal.tracks } as never, 'release');
         expect(issues.map((i) => i.path)).toEqual(['action', 'title', 'displayArtist']);
     });
 

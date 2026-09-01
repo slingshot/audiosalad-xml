@@ -56,7 +56,7 @@ describe('PARTICIPANT', () => {
     });
 
     test('requires role and name', () => {
-        expect(render(PARTICIPANT, {}, 'participant').issues.map((i) => i.path)).toEqual([
+        expect(render(PARTICIPANT, {} as never, 'participant').issues.map((i) => i.path)).toEqual([
             'role',
             'name',
         ]);
@@ -98,7 +98,10 @@ describe('ASSET', () => {
     });
 
     test('requires type and file_name', () => {
-        expect(render(ASSET, {}, 'asset').issues.map((i) => i.path)).toEqual(['type', 'fileName']);
+        expect(render(ASSET, {} as never, 'asset').issues.map((i) => i.path)).toEqual([
+            'type',
+            'fileName',
+        ]);
     });
 
     test('emits fields in XSD order', () => {
@@ -144,7 +147,7 @@ describe('PERMISSION', () => {
     });
 
     test('requires at least one type and an explicit enabled', () => {
-        const { issues } = render(PERMISSION, { type: [] }, 'permission');
+        const { issues } = render(PERMISSION, { type: [] } as never, 'permission');
         expect(issues.map((i) => i.code)).toEqual(['required', 'required']);
     });
 
@@ -194,7 +197,7 @@ describe('TERRITORY', () => {
     });
 
     test('requires at least one country_code', () => {
-        expect(render(TERRITORY, {}, 'territory').issues[0]).toMatchObject({
+        expect(render(TERRITORY, {} as never, 'territory').issues[0]).toMatchObject({
             path: 'countryCode',
             code: 'required',
         });

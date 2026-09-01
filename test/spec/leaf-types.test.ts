@@ -35,7 +35,10 @@ describe('ATTR', () => {
         expect(issues.map((i) => i.code)).toContain('enum');
     });
     test('requires key and value', () => {
-        expect(render(ATTR, {}, 'attr').issues.map((i) => i.path)).toEqual(['key', 'value']);
+        expect(render(ATTR, {} as never, 'attr').issues.map((i) => i.path)).toEqual([
+            'key',
+            'value',
+        ]);
     });
 });
 
@@ -60,7 +63,7 @@ describe('GENRE', () => {
 
 describe('PRICE_TIER', () => {
     test('requires both type and name', () => {
-        expect(render(PRICE_TIER, {}, 'price_tier').issues).toHaveLength(2);
+        expect(render(PRICE_TIER, {} as never, 'price_tier').issues).toHaveLength(2);
     });
 });
 
@@ -70,7 +73,7 @@ describe('TEXT', () => {
         expect(render(TEXT, { content }, 'text').xml).toContain(content);
     });
     test('requires content', () => {
-        expect(render(TEXT, {}, 'text').issues[0]).toMatchObject({
+        expect(render(TEXT, {} as never, 'text').issues[0]).toMatchObject({
             path: 'content',
             code: 'required',
         });

@@ -1,0 +1,151 @@
+import {
+    Action,
+    CountryCode,
+    CountryName,
+    Genre,
+    iTunesPriceTier,
+    ParticipantRole,
+    ReleaseFormat,
+    ReleaseTextType,
+    SubGenre,
+    TrackTextType,
+} from '../enums';
+import { AttributeType } from '../enums/attr';
+import type { ReleaseInput } from '../model';
+
+/**
+ * A fully populated release exercising every element group, including the
+ * three that 0.1.x silently dropped: participant `artist_id`, asset `attr`,
+ * and territory `permission`.
+ */
+export const SAMPLE_RELEASE: ReleaseInput = {
+    distributorName: 'Slingshot Records',
+    exportID: 'abc123',
+    exportTime: '2020-05-02T00:00:00Z',
+    action: Action.Add,
+    upc: '123456789012',
+    vendorReleaseID: 'xyz123',
+    catalogID: 'SS-TST-01',
+    series: 'Test Collection',
+    title: 'Everything I Wanted',
+    titleVersion: 'Slingshot Remix',
+    advisory: 'explicit',
+    metadataLanguage: 'English',
+    audioLanguage: 'English',
+    displayArtist: 'Billie Eilish',
+    participants: [
+        {
+            role: ParticipantRole.MainArtist,
+            name: 'Billie Eilish',
+            primary: true,
+            artistID: [{ type: 'spotify', id: '6qqNVTkY8uBg9cP3Jd7DAH' }],
+        },
+        { role: ParticipantRole.SongWriter, name: "Finneas O'Connell", primary: false },
+    ],
+    compilation: false,
+    originalReleaseDate: '2020-05-02',
+    releaseDate: '2020-05-02',
+    releaseFormat: ReleaseFormat.Single,
+    recordingLocation: CountryCode.UnitedStates,
+    url: 'https://billieeilish.com',
+    genres: [{ primary: Genre.Pop }, { primary: Genre.Pop, sub: SubGenre.PopAdultContemporary }],
+    tags: ['new', 'billie eilish', 'alternative'],
+    notes: 'This is a test of the library',
+    texts: [
+        {
+            type: ReleaseTextType.LinerNotes,
+            language: 'English',
+            content: 'Recorded at Slingshot Studios in Beverly Hills',
+        },
+    ],
+    cInfo: 'Billie Eilish, under exclusive license to Slingshot Records',
+    cYear: 2020,
+    pInfo: 'Billie Eilish, under exclusive license to Slingshot Records',
+    pYear: 2020,
+    rightsHolders: 'Billie Eilish, Slingshot Media',
+    label: {
+        vendorLabelID: '1',
+        name: 'Slingshot Records',
+        city: 'Beverly Hills',
+        state: 'California',
+        country: CountryName.UnitedStates,
+        url: 'https://slingshot.fm',
+        notes: 'Sample label record',
+    },
+    priceTiers: [{ type: 'iTunes', name: iTunesPriceTier.Mid }],
+    permissions: [
+        {
+            type: ['preorder'],
+            enabled: false,
+            startDate: '2021-01-01T00:00:00Z',
+            endDate: '2021-12-31T00:00:00Z',
+            attr: [{ type: AttributeType.String, key: 'note', value: 'sample' }],
+            countryCode: [CountryCode.Antarctica],
+        },
+    ],
+    globalReleaseDate: '2020-05-02T21:00:00Z',
+    territories: [
+        {
+            countryCode: [CountryCode.Worldwide],
+            releaseDate: '2020-05-02T00:00:00Z',
+            permissions: [{ type: ['stream', 'download'], enabled: true }],
+        },
+    ],
+    assets: [
+        {
+            type: 'image',
+            subtype: 'Front',
+            name: 'Cover art',
+            format: 'jpg',
+            mimeType: 'image/jpeg',
+            md5Checksum: '03a43f76d3e52c8a4cf24fd1d8d05911',
+            fileName: 'cover-art.jpg',
+            attr: [{ type: AttributeType.String, key: 'source', value: 'label' }],
+        },
+    ],
+    tracks: [
+        {
+            vendorTrackID: 'aaa111',
+            isrc: 'QM7G92017457',
+            discNumber: 1,
+            trackNumber: 1,
+            title: 'Everything I Wanted',
+            trackLength: 181,
+            advisory: 'explicit',
+            audioLanguage: 'English',
+            bpm: 120,
+            previewStart: 0,
+            previewDuration: 30,
+            displayArtist: 'Billie Eilish',
+            participants: [
+                { role: ParticipantRole.MainArtist, name: 'Billie Eilish', primary: true },
+                { role: ParticipantRole.SongWriter, name: "Finneas O'Connell", primary: false },
+            ],
+            texts: [
+                {
+                    type: TrackTextType.Lyrics,
+                    language: 'English',
+                    content: "As long as I'm here\nNo one can hurt you",
+                },
+            ],
+            cInfo: 'Billie Eilish, under exclusive license to Slingshot Records',
+            cYear: 2020,
+            pInfo: 'Billie Eilish, under exclusive license to Slingshot Records',
+            pYear: 2020,
+            rightsHolders: 'Billie Eilish, Slingshot Media',
+            assets: [
+                {
+                    type: 'audio',
+                    subtype: 'flac',
+                    name: 'Everything I Wanted',
+                    format: 'flac',
+                    mimeType: 'audio/flac',
+                    md5Checksum: '4cf2392db7ccd6c9b663f8a4da42f9cb',
+                    fileName: 'everything-i-wanted.flac',
+                },
+            ],
+            attr: [{ type: AttributeType.String, key: 'ss_id', value: 'test1234' }],
+        },
+    ],
+    attr: [{ type: AttributeType.String, key: 'ss_id', value: '1234test' }],
+};
