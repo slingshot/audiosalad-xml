@@ -3,6 +3,7 @@ import { buildNode } from '../../src/core/descriptor';
 import type { Issue } from '../../src/core/issues';
 import { serialize } from '../../src/core/serialize';
 import { ASSET, PARTICIPANT, PERMISSION, TERRITORY } from '../../src/spec/v3_4';
+import { expectXsdOrder } from '../helpers/order';
 
 const render = <I>(type: Parameters<typeof buildNode<I>>[0], input: I, el: string) => {
     const issues: Issue[] = [];
@@ -50,9 +51,7 @@ describe('PARTICIPANT', () => {
             },
             'participant',
         );
-        const order = ['role', 'role_type', 'instrument', 'name', 'primary'];
-        const positions = order.map((e) => xml.indexOf(`<${e}>`));
-        expect(positions).toEqual([...positions].sort((a, b) => a - b));
+        expectXsdOrder(xml, ['role', 'role_type', 'instrument', 'name', 'primary']);
     });
 
     test('requires role and name', () => {
@@ -119,7 +118,7 @@ describe('ASSET', () => {
             },
             'asset',
         );
-        const order = [
+        expectXsdOrder(xml, [
             'type',
             'sub_type',
             'name',
@@ -128,9 +127,7 @@ describe('ASSET', () => {
             'mime_type',
             'md5_checksum',
             'file_name',
-        ];
-        const positions = order.map((e) => xml.indexOf(`<${e}>`));
-        expect(positions).toEqual([...positions].sort((a, b) => a - b));
+        ]);
     });
 });
 

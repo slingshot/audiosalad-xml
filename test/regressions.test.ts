@@ -3,6 +3,9 @@ import { buildRelease, validateRelease } from '../src/api';
 import { Asset, Participant, Release, Territory, Track } from '../src/legacy/classes';
 import type { ReleaseInput } from '../src/model';
 
+/** This directory — the suite guards itself against defect 7. */
+const TEST_DIR = new URL('.', import.meta.url).pathname;
+
 const base: ReleaseInput = {
     action: 'add',
     title: 'T',
@@ -82,8 +85,34 @@ describe('0.1.x regressions', () => {
         expect(typeof mod.Release).toBe('function');
     });
 
-    test('defect 7: the suite actually asserts — a broken release throws', () => {
-        expect(() => buildRelease({ ...base, tracks: [] })).toThrow();
+    // Defect 7 was a property of the TEST SUITE, not the library: 0.1.x shipped
+    // `await expect(await validateXMLWithXSD(...)).resolves;` — an expression
+    // statement that reads a getter and discards it, so no matcher ever ran and
+    // the suite passed unconditionally. Asserting that the library throws on bad
+    // input does not guard that; only scanning the suite does.
+    test('defect 7: no test file contains a discarded-matcher assertion', async () => {
+        const files = new Bun.Glob('**/*.test.ts').scanSync({ cwd: TEST_DIR });
+        const offenders: string[] = [];
+        for (const rel of files) {
+            const src = await Bun.file(`${TEST_DIR}/${rel}`).text();
+            src.split('\n').forEach((line, i) => {
+                // `.resolves` / `.rejects` must be followed by a matcher call,
+                // never terminate the statement.
+                if (/\.(resolves|rejects)\s*;\s*$/.test(line)) {
+                    offenders.push(`${rel}:${i + 1}  ${line.trim()}`);
+                }
+            });
+        }
+        expect(offenders).toEqual([]);
+    });
+
+    test('defect 7: every test file actually asserts something', async () => {
+        const files = [...new Bun.Glob('**/*.test.ts').scanSync({ cwd: TEST_DIR })];
+        expect(files.length).toBeGreaterThan(10);
+        for (const rel of files) {
+            const src = await Bun.file(`${TEST_DIR}/${rel}`).text();
+            expect(src, `${rel} contains no expect() call`).toContain('expect(');
+        }
     });
 
     test('multi-line text is not collapsed', () => {

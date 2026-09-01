@@ -3,6 +3,7 @@ import { buildNode } from '../../src/core/descriptor';
 import type { Issue } from '../../src/core/issues';
 import { serialize } from '../../src/core/serialize';
 import { ATTR, GENRE, LABEL, PRICE_TIER, PROPRIETARY_ID, TEXT } from '../../src/spec/v3_4';
+import { expectXsdOrder } from '../helpers/order';
 
 const render = <I>(type: Parameters<typeof buildNode<I>>[0], input: I, el: string) => {
     const issues: Issue[] = [];
@@ -115,8 +116,14 @@ describe('LABEL', () => {
             },
             'label',
         );
-        const order = ['vendor_label_id', 'name', 'city', 'state', 'country', 'url', 'notes'];
-        const positions = order.map((e) => xml.indexOf(`<${e}>`));
-        expect(positions).toEqual([...positions].sort((a, b) => a - b));
+        expectXsdOrder(xml, [
+            'vendor_label_id',
+            'name',
+            'city',
+            'state',
+            'country',
+            'url',
+            'notes',
+        ]);
     });
 });

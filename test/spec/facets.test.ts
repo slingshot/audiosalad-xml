@@ -42,11 +42,23 @@ describe('ISWC', () => {
 });
 
 describe('UPC_EAN', () => {
-    test('accepts 12, 13, and 14 digits', () => {
-        for (const n of [12, 13, 14])
-            expect('1'.repeat(n).length).toBeLessThanOrEqual(UPC_EAN.maxLength);
+    // v3.4 widened maxLength from 13 to 14. Assert acceptance against the real
+    // facet, not `'1'.repeat(n).length <= maxLength`, which is 12 <= 14.
+    test.each([12, 13, 14])('accepts a %i-digit barcode', (n) => {
+        const code = '1'.repeat(n);
+        expect(UPC_EAN.pattern.test(code)).toBe(true);
+        expect(code.length).toBeGreaterThanOrEqual(UPC_EAN.minLength);
+        expect(code.length).toBeLessThanOrEqual(UPC_EAN.maxLength);
+    });
+
+    test.each([11, 15])('rejects a %i-digit barcode by length', (n) => {
+        const code = '1'.repeat(n);
+        const withinLength = code.length >= UPC_EAN.minLength && code.length <= UPC_EAN.maxLength;
+        expect(withinLength).toBe(false);
+    });
+
+    test('declares the v3.4 length bounds', () => {
         expect(UPC_EAN.minLength).toBe(12);
-        // v3.4 widened maxLength from 13 to 14.
         expect(UPC_EAN.maxLength).toBe(14);
     });
     test('rejects non-digits', () => {

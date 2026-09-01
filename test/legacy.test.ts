@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'bun:test';
+import { buildRelease } from '../src/api';
 import { Action, CountryCode, ParticipantRole } from '../src/enums';
 import {
     Asset,
@@ -14,7 +15,13 @@ import {
     Text,
     Track,
 } from '../src/legacy/classes';
-import type { TrackInput } from '../src/model';
+import type { ReleaseInput, TrackInput } from '../src/model';
+
+const minimalRelease: Omit<ReleaseInput, 'tracks'> = {
+    action: 'add',
+    title: 'T',
+    displayArtist: 'A',
+};
 
 describe('Release facade', () => {
     test('constructs from a partial and emits XML', () => {
@@ -74,8 +81,12 @@ describe('child facades', () => {
     });
 
     test('an instance is assignable to its input type', () => {
+        // The assignability itself is a type-level fact, checked by
+        // `bun run typecheck` — bun strips types without checking them, so the
+        // annotation below is the real assertion. Assert something the runtime
+        // can actually falsify too, rather than toHaveLength on a literal.
         const tracks: TrackInput[] = [new Track({ title: 'T', displayArtist: 'A' })];
-        expect(tracks).toHaveLength(1);
+        expect(buildRelease({ ...minimalRelease, tracks })).toContain('<title>T</title>');
     });
 
     // 0.1.x initialized these; dropping them would break partial constructions.

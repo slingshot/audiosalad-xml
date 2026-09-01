@@ -4,6 +4,7 @@ import type { Issue } from '../../src/core/issues';
 import { serialize } from '../../src/core/serialize';
 import type { ReleaseInput } from '../../src/model';
 import { RELEASE, TRACK } from '../../src/spec/v3_4';
+import { expectXsdOrder } from '../helpers/order';
 
 const minimal: ReleaseInput = {
     action: 'add',
@@ -140,12 +141,7 @@ describe('TRACK', () => {
             'asset',
             'attr',
         ];
-        const positions = order.map((e) => {
-            const at = xml.indexOf(`<${e}>`);
-            expect(at).toBeGreaterThan(-1);
-            return at;
-        });
-        expect(positions).toEqual([...positions].sort((a, b) => a - b));
+        expectXsdOrder(xml, order);
     });
 });
 
@@ -292,11 +288,6 @@ describe('RELEASE', () => {
             'track',
             'attr',
         ];
-        const positions = order.map((e) => {
-            const at = xml.indexOf(`<${e}>`);
-            expect(at).toBeGreaterThan(-1);
-            return at;
-        });
-        expect(positions).toEqual([...positions].sort((a, b) => a - b));
+        expectXsdOrder(xml, order);
     });
 });

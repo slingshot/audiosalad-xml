@@ -153,11 +153,14 @@ describe('descriptor tables and input interfaces agree', () => {
             }
         });
 
-        test(`${name} declares a complex type wherever kind is complex`, () => {
-            for (const f of type.fields) {
-                if (f.kind === 'complex') expect(f.type).toBeDefined();
-            }
-        });
+        // Six of the twelve tables have no complex fields, so a bare loop with
+        // the expect inside an `if` reported green while asserting nothing.
+        const complexFields = type.fields.filter((f) => f.kind === 'complex');
+        if (complexFields.length > 0) {
+            test(`${name} declares a complex type for each of its ${complexFields.length} complex field(s)`, () => {
+                for (const f of complexFields) expect(f.type).toBeDefined();
+            });
+        }
     }
 
     test('no table has duplicate element names', () => {
